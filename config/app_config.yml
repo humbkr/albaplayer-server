@@ -1,0 +1,18 @@
+
+
+# General info.
+APPName: Alba Player
+
+# Database connection.
+DB:
+    Driver: sqlite3
+    File: ./alba.db
+
+# Logging system.
+Log:
+    File: app.log
+    Path: ./
+
+#server configuration.
+Server:
+    Port: 8888
