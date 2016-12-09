@@ -2,12 +2,20 @@ package interfaces
 
 import (
 	"os"
-	"path/filepath"
 
 	"fmt"
+	"path"
+	"path/filepath"
+
+	"strings"
+
+	"strconv"
+
+	"math"
 
 	"git.humbkr.com/jgalletta/alba-player/domain"
 	id3 "github.com/mikkyang/id3-go"
+	mp3info "github.com/xhenner/mp3-go"
 )
 
 type LibraryRepository struct {
@@ -34,21 +42,23 @@ func (lr LibraryRepository) Erase() {
 /**
 Recursively browse a directory and import / update all the audio files in the database.
 */
-func (lr LibraryRepository) scanFolder(path string) {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+func (lr LibraryRepository) scanFolder(filePath string) {
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		return
 	}
 
-	filepath.Walk(path, func(path string, fileInfo os.FileInfo, err error) error {
+	filepath.Walk(filePath, func(filePath string, fileInfo os.FileInfo, err error) error {
 		if matched, _ := filepath.Match("*.mp3", fileInfo.Name()); matched {
 			// Read idTag info.
-			mp3File, err := id3.Open(path)
+			mp3Tags, err := id3.Open(filePath)
+			mp3Info, err := mp3info.Examine(filePath, false)
 
 			if err == nil {
 				var artistId int
 				var albumId int
 
-				if artistName := mp3File.Artist(); artistName != "" {
+				// Process artist if any.
+				if artistName := mp3Tags.Artist(); artistName != "" {
 					// See if the artist exists.
 					artistRepo := ArtistRepository{AppContext: lr.AppContext}
 					artist, err := artistRepo.FindByName(artistName)
@@ -66,7 +76,8 @@ func (lr LibraryRepository) scanFolder(path string) {
 					artistId = artist.Id
 				}
 
-				if albumName := mp3File.Album(); albumName != "" {
+				// Process album if any.
+				if albumName := mp3Tags.Album(); albumName != "" {
 					// See if the album exists.
 					albumRepo := AlbumRepository{AppContext: lr.AppContext}
 					album, err := albumRepo.FindByName(albumName, artistId)
@@ -77,35 +88,96 @@ func (lr LibraryRepository) scanFolder(path string) {
 
 					album.Name = albumName
 					album.ArtistId = artistId
-					album.Year = mp3File.Year()
+					// TODO Track all the years from an album tracks and compute the final value.
+					album.Year = mp3Tags.Year()
 					albumRepo.Save(&album)
 
 					albumId = album.Id
 				}
 
-				if trackName := mp3File.Title(); trackName != "" {
-					// See if the album exists.
-					trackRepo := TrackRepository{AppContext: lr.AppContext}
-					track, err := trackRepo.FindByName(trackName, artistId, albumId)
+				// There is always a track, if the title metatag is not present, build one with the filename.
+				trackName := mp3Tags.Title()
+				if trackName == "" {
+					_, f := path.Split(filePath)
 
-					if err != nil {
-						track = domain.Track{}
-					}
-
-					track.Name = trackName
-					track.ArtistId = artistId
-					track.AlbumId = albumId
-					fmt.Println(mp3File.Frame("TRCK"))
-					fmt.Println(mp3File.Frame("TLEN"))
-					fmt.Println(mp3File.Frame("MCDI"))
-					trackRepo.Save(&track)
+					var extension = filepath.Ext(f)
+					trackName = f[0 : len(f)-len(extension)]
 				}
+
+				fmt.Println("Processing file: " + mp3Tags.Artist() + " - " + trackName)
+
+				// See if the track exists.
+				trackRepo := TrackRepository{AppContext: lr.AppContext}
+				track, err := trackRepo.FindByName(trackName, artistId, albumId)
+
+				if err != nil {
+					track = domain.Track{}
+				}
+
+				track.Name = trackName
+				track.ArtistId = artistId
+				track.AlbumId = albumId
+				track.Number = getTrackNumber(mp3Tags)
+				track.Disc = getTrackDisc(mp3Tags)
+				track.Duration = getDuration(mp3Info.Length)
+				track.Path = filePath
+
+				trackRepo.Save(&track)
+
 			}
 
-			mp3File.Close()
+			mp3Tags.Close()
 		}
 
 		return nil
 	})
 
+}
+
+/*
+Return the track number if present, else an empty string.
+*/
+func getTrackNumber(mp3Tags *id3.File) int {
+	trackNumber := 0
+	var number string
+
+	newFrame := mp3Tags.Frame("TRCK")
+	if newFrame != nil {
+		number = newFrame.String()
+	} else {
+		oldFrame := mp3Tags.Frame("TRK")
+		if oldFrame != nil {
+			number = oldFrame.String()
+		}
+	}
+
+	if number != "" {
+		shards := strings.Split(number, "/")
+		trackNumber, _ = strconv.Atoi(shards[0])
+	}
+
+	return trackNumber
+}
+
+/*
+Return the disc number if present, else an empty string.
+*/
+func getTrackDisc(mp3Tags *id3.File) string {
+	tlenFrame := mp3Tags.Frame("MCDI")
+	if tlenFrame != nil {
+		shards := strings.Split(tlenFrame.String(), "/")
+		return shards[0]
+	} else {
+		tleFrame := mp3Tags.Frame("MCI")
+		if tleFrame != nil {
+			shards := strings.Split(tleFrame.String(), "/")
+			return shards[0]
+		} else {
+			return ""
+		}
+	}
+}
+
+func getDuration(f float64) int {
+	return int(math.Floor(f + .5))
 }
