@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"fmt"
 	"git.humbkr.com/jgalletta/alba-player/domain"
 )
 
@@ -15,7 +16,17 @@ type AlbumRepository struct {
 Fetches an album from the database.
 */
 func (ar AlbumRepository) Find(id int) (entity domain.Album, err error) {
-	err = ar.AppContext.DB.SelectOne(&entity, "SELECT * FROM albums WHERE id=?", id)
+	var album domain.Album
+	err = ar.AppContext.DB.SelectOne(&album, "SELECT * FROM albums WHERE id=?", id)
+	if err != nil {
+		entity = album
+		// Populate tracks.
+		tracksRepo := TrackRepository{AppContext: ar.AppContext}
+		tracks, err := tracksRepo.FindTracksForAlbum(id)
+		if err != nil {
+			entity.Tracks = tracks
+		}
+	}
 
 	return
 }
@@ -32,6 +43,24 @@ func (ar AlbumRepository) FindByName(name string, artistId int) (entity domain.A
 			entity = entities[0]
 		} else {
 			err = errors.New("No result found")
+		}
+	}
+
+	return
+}
+
+/**
+Fetches albums having the specified artistId from database ordered by year.
+*/
+func (tr TrackRepository) FindAlbumsForArtist(artistId int) (entities map[int]domain.Album, err error) {
+	var albums domain.Albums
+
+	_, err = tr.AppContext.DB.Select(&albums, "SELECT * FROM albums WHERE artist_id = ? ORDER BY year", artistId)
+	if err != nil {
+		// Create a map of tracks indexed by the trackId.
+		entities = make(map[int]domain.Album)
+		for _, album := range albums {
+			entities[album.Id] = album
 		}
 	}
 

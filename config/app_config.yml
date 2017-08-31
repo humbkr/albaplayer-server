@@ -13,6 +13,10 @@ Log:
     File: app.log
     Path: ./
 
-#server configuration.
+# Webserver configuration.
 Server:
     Port: 8888
+
+# Library configuration.
+Library:
+    Folder: C:\Users\humbk\Music\alba-player\media

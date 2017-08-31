@@ -15,6 +15,7 @@ import (
 
 	"git.humbkr.com/jgalletta/alba-player/domain"
 	id3 "github.com/mikkyang/id3-go"
+	"github.com/spf13/viper"
 	mp3info "github.com/xhenner/mp3-go"
 )
 
@@ -23,14 +24,15 @@ type LibraryRepository struct {
 }
 
 func (lr LibraryRepository) Update() {
-	// TODO stub
-	lr.scanFolder("/home/humbkr/Music")
+	// TODO make this configurable.
+	lr.scanFolder(viper.GetString("Library.Folder"))
 }
 
 /*
 Erase all collection data.
 */
 func (lr LibraryRepository) Erase() {
+	// We have to delete the tables content AND reset the sequences for ID columns.
 	lr.AppContext.DB.Exec("DELETE FROM tracks")
 	lr.AppContext.DB.Exec("DELETE FROM sqlite_sequence WHERE name = 'tracks'")
 	lr.AppContext.DB.Exec("DELETE FROM albums")
@@ -40,7 +42,9 @@ func (lr LibraryRepository) Erase() {
 }
 
 /**
-Recursively browse a directory and import / update all the audio files in the database.
+Recursively browses a directory and import / update all the audio files in the database.
+
+TODO: Manage other filetypes than mp3.
 */
 func (lr LibraryRepository) scanFolder(filePath string) {
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -51,6 +55,7 @@ func (lr LibraryRepository) scanFolder(filePath string) {
 		if matched, _ := filepath.Match("*.mp3", fileInfo.Name()); matched {
 			// Read idTag info.
 			mp3Tags, err := id3.Open(filePath)
+			// TODO: err is not checked.
 			mp3Info, err := mp3info.Examine(filePath, false)
 
 			if err == nil {
@@ -104,7 +109,7 @@ func (lr LibraryRepository) scanFolder(filePath string) {
 					trackName = f[0 : len(f)-len(extension)]
 				}
 
-				fmt.Println("Processing file: " + mp3Tags.Artist() + " - " + trackName)
+				//fmt.Println("Processing file: " + mp3Tags.Artist() + " - " + trackName)
 
 				// See if the track exists.
 				trackRepo := TrackRepository{AppContext: lr.AppContext}
@@ -135,7 +140,7 @@ func (lr LibraryRepository) scanFolder(filePath string) {
 }
 
 /*
-Return the track number if present, else an empty string.
+Returns the track number if present, else an empty string.
 */
 func getTrackNumber(mp3Tags *id3.File) int {
 	trackNumber := 0
@@ -160,7 +165,7 @@ func getTrackNumber(mp3Tags *id3.File) int {
 }
 
 /*
-Return the disc number if present, else an empty string.
+Returns the disc number if present, else an empty string.
 */
 func getTrackDisc(mp3Tags *id3.File) string {
 	tlenFrame := mp3Tags.Frame("MCDI")
@@ -178,6 +183,7 @@ func getTrackDisc(mp3Tags *id3.File) string {
 	}
 }
 
+// Get duration in seconds.
 func getDuration(f float64) int {
 	return int(math.Floor(f + .5))
 }
