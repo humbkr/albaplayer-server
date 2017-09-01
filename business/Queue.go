@@ -9,7 +9,7 @@ Contains code relative to the queue system (currently playing list of songs).
 
 type Queue struct {
 	Tracklist domain.Tracks
-	Library   *CollectionInteractor
+	Library   *LibraryInteractor
 }
 
 func (q Queue) AppendTrack(trackId int) {

@@ -1,9 +1,8 @@
 package domain
 
 type Track struct {
-	Type     string `db:"-"`
 	Id       int    `db:"id"`
-	Name     string `db:"name"`
+	Title    string `db:"title"`
 	AlbumId  int    `db:"album_id"`
 	ArtistId int    `db:"artist_id"`
 	Disc     string `db:"disc"`

@@ -14,7 +14,7 @@ type Album {
 type Track {
   id: ID
   title: String!
-  disc: Int
+  disc: String
   number: Int
   duration: Int
   path: String!

@@ -82,16 +82,16 @@ func (lr LibraryRepository) scanFolder(filePath string) {
 				}
 
 				// Process album if any.
-				if albumName := mp3Tags.Album(); albumName != "" {
+				if albumTitle := mp3Tags.Album(); albumTitle != "" {
 					// See if the album exists.
 					albumRepo := AlbumRepository{AppContext: lr.AppContext}
-					album, err := albumRepo.FindByName(albumName, artistId)
+					album, err := albumRepo.FindByName(albumTitle, artistId)
 
 					if err != nil {
 						album = domain.Album{}
 					}
 
-					album.Name = albumName
+					album.Title = albumTitle
 					album.ArtistId = artistId
 					// TODO Track all the years from an album tracks and compute the final value.
 					album.Year = mp3Tags.Year()
@@ -101,25 +101,25 @@ func (lr LibraryRepository) scanFolder(filePath string) {
 				}
 
 				// There is always a track, if the title metatag is not present, build one with the filename.
-				trackName := mp3Tags.Title()
-				if trackName == "" {
+				trackTitle := mp3Tags.Title()
+				if trackTitle == "" {
 					_, f := path.Split(filePath)
 
 					var extension = filepath.Ext(f)
-					trackName = f[0 : len(f)-len(extension)]
+					trackTitle = f[0 : len(f)-len(extension)]
 				}
 
-				//fmt.Println("Processing file: " + mp3Tags.Artist() + " - " + trackName)
+				//fmt.Println("Processing file: " + mp3Tags.Artist() + " - " + trackTitle)
 
 				// See if the track exists.
 				trackRepo := TrackRepository{AppContext: lr.AppContext}
-				track, err := trackRepo.FindByName(trackName, artistId, albumId)
+				track, err := trackRepo.FindByName(trackTitle, artistId, albumId)
 
 				if err != nil {
 					track = domain.Track{}
 				}
 
-				track.Name = trackName
+				track.Title = trackTitle
 				track.ArtistId = artistId
 				track.AlbumId = albumId
 				track.Number = getTrackNumber(mp3Tags)
@@ -170,13 +170,12 @@ Returns the disc number if present, else an empty string.
 func getTrackDisc(mp3Tags *id3.File) string {
 	tlenFrame := mp3Tags.Frame("MCDI")
 	if tlenFrame != nil {
-		shards := strings.Split(tlenFrame.String(), "/")
-		return shards[0]
+		fmt.Println("tlenFrame != nil, returning" + tlenFrame.String())
+		return tlenFrame.String()
 	} else {
 		tleFrame := mp3Tags.Frame("MCI")
 		if tleFrame != nil {
-			shards := strings.Split(tleFrame.String(), "/")
-			return shards[0]
+			return tleFrame.String()
 		} else {
 			return ""
 		}

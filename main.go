@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/viper"
 	"net/http"
 	gqlHandler "github.com/graphql-go/handler"
+	"github.com/mnmtanish/go-graphiql"
 )
 
 func main() {
@@ -37,22 +38,22 @@ func main() {
 	}
 
 	// Instanciate all we need to work on the media library.
-	collectionInteractor := new(business.CollectionInteractor)
-	collectionInteractor.ArtistRepository = interfaces.ArtistRepository{AppContext: appContext}
-	collectionInteractor.AlbumRepository = interfaces.AlbumRepository{AppContext: appContext}
-	collectionInteractor.TrackRepository = interfaces.TrackRepository{AppContext: appContext}
-	collectionInteractor.LibraryRepository = interfaces.LibraryRepository{AppContext: appContext}
+	libraryInteractor := new(business.LibraryInteractor)
+	libraryInteractor.ArtistRepository = interfaces.ArtistRepository{AppContext: appContext}
+	libraryInteractor.AlbumRepository = interfaces.AlbumRepository{AppContext: appContext}
+	libraryInteractor.TrackRepository = interfaces.TrackRepository{AppContext: appContext}
+	libraryInteractor.LibraryRepository = interfaces.LibraryRepository{AppContext: appContext}
 
 	// Instanciate the main Queue.
 	nowPlaying := new(business.Queue)
-	nowPlaying.Library = collectionInteractor
+	nowPlaying.Library = libraryInteractor
 
 	// STUB: instanciate the database for tests.
-	//collectionInteractor.EraseLibrary()
-	//collectionInteractor.UpdateLibrary()
+	libraryInteractor.EraseLibrary()
+	libraryInteractor.UpdateLibrary()
 
 	// Initialize GraphQL stuff.
-	graphQLInteractor := interfaces.NewGraphQLInteractor(collectionInteractor)
+	graphQLInteractor := interfaces.NewGraphQLInteractor(libraryInteractor)
 
 	// Create a graphl-go HTTP handler with our previously defined schema
 	// and we also set it to return pretty JSON output.
@@ -64,6 +65,10 @@ func main() {
 	// Serve a GraphQL endpoint at `/graphql`.
 	http.Handle("/graphql", apiHandler)
 
+	// Serve graphiql.
+	http.HandleFunc("/", graphiql.ServeGraphiQL)
+
 	// Launch the server.
 	http.ListenAndServe(":" + viper.GetString("Server.Port"), nil)
+	fmt.Printf("Server is up: http://localhost:%s/graphql", viper.GetString("Server.Port"))
 }

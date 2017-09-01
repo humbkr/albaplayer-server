@@ -1,13 +1,12 @@
 package domain
 
 type Album struct {
-	Type     string        `db:"-"`
-	Id       int           `db:"id"`
-	Name     string        `db:"name"`
-	Image    string        `db:"image"`
-	Year     string        `db:"year"`
-	ArtistId int           `db:"artist_id"`
-	Tracks   map[int]Track `db:"-"`
+	Id       int    `db:"id"`
+	Title    string `db:"title"`
+	Image    string `db:"image"`
+	Year     string `db:"year"`
+	ArtistId int    `db:"artist_id"`
+	Tracks   Tracks	`db:"-"`
 }
 
 type Albums []Album

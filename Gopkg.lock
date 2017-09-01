@@ -33,12 +33,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/graphql-go/relay"
-  packages = ["."]
-  revision = "9054c3f9e4f31c403e404f1292d6d12874d1fdc5"
-
-[[projects]]
-  branch = "master"
   name = "github.com/hashicorp/hcl"
   packages = [".","hcl/ast","hcl/parser","hcl/scanner","hcl/strconv","hcl/token","json/parser","json/scanner","json/token"]
   revision = "392dba7d905ed5d04a5794ba89f558b27e2ba1ca"
@@ -66,6 +60,12 @@
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
   revision = "d0303fe809921458f417bcf828397a65db30a7e4"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/mnmtanish/go-graphiql"
+  packages = ["."]
+  revision = "cef5a61bd62b996aa67029c6c858f673d6e51718"
 
 [[projects]]
   name = "github.com/natefinch/lumberjack"
@@ -148,6 +148,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "62cfa8daffbec24917a7c391e5accdd57e85e49823c74b4c9386056892238666"
+  inputs-digest = "9dccd08cc590c44ef3d43c3759e6931fc1af8d4a206884a558dc510a48be97f1"
   solver-name = "gps-cdcl"
   solver-version = 1

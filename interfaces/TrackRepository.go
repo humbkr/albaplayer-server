@@ -2,7 +2,6 @@ package interfaces
 
 import (
 	"errors"
-	"strings"
 
 	"git.humbkr.com/jgalletta/alba-player/domain"
 )
@@ -27,7 +26,7 @@ If several tracks are found, returns only the first one.
 */
 func (tr TrackRepository) FindByName(name string, artistId int, albumId int) (entity domain.Track, err error) {
 	var entities domain.Tracks
-	_, err = tr.AppContext.DB.Select(&entities, "SELECT * FROM tracks WHERE LOWER(name) = ? AND artist_id = ? AND album_id = ?", strings.ToLower(name), artistId, albumId)
+	_, err = tr.AppContext.DB.Select(&entities, "SELECT * FROM tracks WHERE title = ? AND artist_id = ? AND album_id = ?", name, artistId, albumId)
 
 	if err == nil {
 		if len(entities) > 0 {
@@ -43,17 +42,8 @@ func (tr TrackRepository) FindByName(name string, artistId int, albumId int) (en
 /**
 Fetches tracks having the specified albumId from database ordered by disc number then track number.
 */
-func (tr TrackRepository) FindTracksForAlbum(albumId int) (entities map[int]domain.Track, err error) {
-	var tracks domain.Tracks
-
-	_, err = tr.AppContext.DB.Select(&tracks, "SELECT * FROM tracks WHERE album_id = ? ORDER BY disc, number", albumId)
-	if err != nil {
-		// Create a map of tracks indexed by the trackId.
-		entities = make(map[int]domain.Track)
-		for _, track := range tracks {
-			entities[track.Id] = track
-		}
-	}
+func (tr TrackRepository) FindTracksForAlbum(albumId int) (entities domain.Tracks, err error) {
+	_, err = tr.AppContext.DB.Select(&entities, "SELECT * FROM tracks WHERE album_id = ? ORDER BY disc, number", albumId)
 
 	return
 }

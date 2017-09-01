@@ -1,8 +1,6 @@
 package interfaces
 
 import (
-	"strings"
-
 	"errors"
 
 	"git.humbkr.com/jgalletta/alba-player/domain"
@@ -18,6 +16,19 @@ Fetches an artist from the database.
 func (ar ArtistRepository) Find(id int) (entity domain.Artist, err error) {
 	err = ar.AppContext.DB.SelectOne(&entity, "SELECT * FROM artists WHERE id=?", id)
 
+	var artist domain.Artist
+	err = ar.AppContext.DB.SelectOne(&artist, "SELECT * FROM artists WHERE id=?", id)
+	if err == nil {
+		entity = artist
+
+		// Populate albums.
+		albumRepo := AlbumRepository{AppContext: ar.AppContext}
+		albums, err := albumRepo.FindAlbumsForArtist(id)
+		if err == nil {
+			entity.Albums = albums
+		}
+	}
+
 	return
 }
 
@@ -26,7 +37,7 @@ Fetches an artist from database based on its name (case insensitive).
 */
 func (ar ArtistRepository) FindByName(name string) (entity domain.Artist, err error) {
 	var entities domain.Artists
-	_, err = ar.AppContext.DB.Select(&entities, "SELECT * FROM artists WHERE LOWER(name) = ?", strings.ToLower(name))
+	_, err = ar.AppContext.DB.Select(&entities, "SELECT * FROM artists WHERE name = ?", name)
 
 	if err == nil {
 		if len(entities) > 0 {
