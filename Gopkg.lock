@@ -3,9 +3,9 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/djimenez/iconv-go"
+  name = "github.com/dhowden/tag"
   packages = ["."]
-  revision = "8960e66bd3dacbc8773962b40eb82fc18c63c127"
+  revision = "b45cd4d440f5aa7b2a5ee69dee88c16da260eb07"
 
 [[projects]]
   name = "github.com/fsnotify/fsnotify"
@@ -48,12 +48,6 @@
   packages = ["."]
   revision = "ca5e3819723d8eeaf170ad510e7da1d6d2e94a08"
   version = "v1.2.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/mikkyang/id3-go"
-  packages = [".","encodedbytes","v1","v2"]
-  revision = "0168d962f1d773af3e29867138593203b653782e"
 
 [[projects]]
   branch = "master"
@@ -148,6 +142,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9dccd08cc590c44ef3d43c3759e6931fc1af8d4a206884a558dc510a48be97f1"
+  inputs-digest = "f91780bf92a48126c3c426809293e5dadcc0b0a4b9d530648434d07c89342389"
   solver-name = "gps-cdcl"
   solver-version = 1
