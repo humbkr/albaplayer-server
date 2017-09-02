@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"git.humbkr.com/jgalletta/alba-player/business"
 	"git.humbkr.com/jgalletta/alba-player/domain"
-	"fmt"
 )
 
 type graphQLInteractor struct {
@@ -49,7 +48,6 @@ var artistType = graphql.NewObject(graphql.ObjectConfig{
 			Type: graphql.NewList(graphql.NewNonNull(albumType)),
 			Resolve: func (p graphql.ResolveParams) (interface{}, error) {
 				if artist, ok := p.Source.(domain.Artist); ok == true {
-					fmt.Println(artist)
 					return artist.Albums, nil
 				}
 				return nil, nil
@@ -166,6 +164,17 @@ var trackType = graphql.NewObject(graphql.ObjectConfig{
 				return nil, nil
 			},
 		},
+		"genre": &graphql.Field{
+			Name: "Track genre",
+			Description: "Music genre.",
+			Type: graphql.String,
+			Resolve: func (p graphql.ResolveParams) (interface{}, error) {
+				if track, ok := p.Source.(domain.Track); ok == true {
+					return track.Genre, nil
+				}
+				return nil, nil
+			},
+		},
 		"path": &graphql.Field{
 			Name: "Track path",
 			Description: "Localisation of the media file on the computer.",
@@ -188,9 +197,6 @@ Builds GraphQL Schema, initialise dynamic fields on types.
 func NewGraphQLInteractor(ci *business.LibraryInteractor) *graphQLInteractor {
 	interactor := &graphQLInteractor{Library:ci}
 
-
-
-
 	/**
 	 * This is the type that will be the root of our query,
 	 * and the entry point into our schema.
@@ -198,6 +204,12 @@ func NewGraphQLInteractor(ci *business.LibraryInteractor) *graphQLInteractor {
 	queryType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Query",
 		Fields: graphql.Fields{
+			"artists": &graphql.Field{
+				Type: graphql.NewList(artistType),
+				Resolve: func (g graphql.ResolveParams) (interface{}, error) {
+					return interactor.Library.ArtistRepository.FindAll(true)
+				},
+			},
 			"artist": &graphql.Field{
 				Type: artistType,
 				Args: graphql.FieldConfigArgument{
@@ -216,6 +228,12 @@ func NewGraphQLInteractor(ci *business.LibraryInteractor) *graphQLInteractor {
 					return interactor.Library.ArtistRepository.Find(id)
 				},
 			},
+			"albums": &graphql.Field{
+				Type: graphql.NewList(albumType),
+				Resolve: func (g graphql.ResolveParams) (interface{}, error) {
+					return interactor.Library.AlbumRepository.FindAll(true)
+				},
+			},
 			"album": &graphql.Field{
 				Type: albumType,
 				Args: graphql.FieldConfigArgument{
@@ -232,6 +250,12 @@ func NewGraphQLInteractor(ci *business.LibraryInteractor) *graphQLInteractor {
 					}
 
 					return interactor.Library.AlbumRepository.Find(id)
+				},
+			},
+			"tracks": &graphql.Field{
+				Type: graphql.NewList(trackType),
+				Resolve: func (g graphql.ResolveParams) (interface{}, error) {
+					return interactor.Library.TrackRepository.FindAll()
 				},
 			},
 			"track": &graphql.Field{

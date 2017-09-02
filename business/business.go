@@ -6,7 +6,7 @@ type LibraryInteractor struct {
 	ArtistRepository  domain.ArtistRepository
 	AlbumRepository   domain.AlbumRepository
 	TrackRepository   domain.TrackRepository
-	LibraryRepository domain.LibraryRepository
+	LibraryRepository LibraryRepository
 }
 
 func (interactor LibraryInteractor) UpdateLibrary() {
@@ -15,4 +15,8 @@ func (interactor LibraryInteractor) UpdateLibrary() {
 
 func (interactor LibraryInteractor) EraseLibrary() {
 	interactor.LibraryRepository.Erase()
+}
+
+func (interactor LibraryInteractor) CleanDeadFiles() {
+	interactor.LibraryRepository.Clean()
 }

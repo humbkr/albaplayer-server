@@ -1,7 +1,5 @@
 package domain
 
-import "hash"
-
 type Track struct {
 	Id       int    `db:"id"` // Id used to get resources.
 	Title    string `db:"title"`

@@ -19,6 +19,15 @@ func (tr TrackRepository) Find(id int) (entity domain.Track, err error) {
 	return
 }
 
+/*
+Fetches all tracks from the database.
+*/
+func (tr TrackRepository) FindAll() (entities domain.Tracks, err error) {
+	_, err = tr.AppContext.DB.Select(&entities, "SELECT * FROM tracks")
+
+	return
+}
+
 /**
 Fetches a track from database by name, artist id, and album id.
 
@@ -63,4 +72,12 @@ func (tr TrackRepository) Save(entity *domain.Track) (err error) {
 	}
 
 	return nil
+}
+
+/**
+Delete a track from the Database.
+*/
+func (tr TrackRepository) Delete(trackId int) (err error) {
+	_, err = tr.AppContext.DB.Delete(trackId)
+	return
 }

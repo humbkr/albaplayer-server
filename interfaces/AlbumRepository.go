@@ -23,6 +23,23 @@ func (ar AlbumRepository) Find(id int) (entity domain.Album, err error) {
 	return
 }
 
+/*
+Fetches all albums from the database.
+
+@param hydrate
+	If true populate albums tracks.
+*/
+func (ar AlbumRepository) FindAll(hydrate bool) (entities domain.Albums, err error) {
+	_, err = ar.AppContext.DB.Select(&entities, "SELECT * FROM albums")
+	if hydrate {
+		for i := range entities {
+			ar.populateTracks(&entities[i])
+		}
+	}
+
+	return
+}
+
 /**
 Fetches an album from database.
 */
@@ -44,9 +61,9 @@ func (ar AlbumRepository) FindByName(name string, artistId int) (entity domain.A
 /**
 Fetches albums having the specified artistId from database ordered by year.
 */
-func (ar AlbumRepository) FindAlbumsForArtist(artistId int) (entities domain.Albums, err error) {
+func (ar AlbumRepository) FindAlbumsForArtist(artistId int, hydrate bool) (entities domain.Albums, err error) {
 	_, err = ar.AppContext.DB.Select(&entities, "SELECT * FROM albums WHERE artist_id = ? ORDER BY year", artistId)
-	if err == nil {
+	if err == nil && hydrate {
 		for i := range entities {
 			ar.populateTracks(&entities[i])
 		}
@@ -70,6 +87,14 @@ func (ar AlbumRepository) Save(entity *domain.Album) (err error) {
 	}
 
 	return nil
+}
+
+/**
+Delete an album from the Database.
+*/
+func (ar AlbumRepository) Delete(albumId int) (err error) {
+	_, err = ar.AppContext.DB.Delete(albumId)
+	return
 }
 
 /**

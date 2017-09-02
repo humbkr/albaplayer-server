@@ -15,17 +15,24 @@ Fetches an artist from the database.
 */
 func (ar ArtistRepository) Find(id int) (entity domain.Artist, err error) {
 	err = ar.AppContext.DB.SelectOne(&entity, "SELECT * FROM artists WHERE id=?", id)
-
-	var artist domain.Artist
-	err = ar.AppContext.DB.SelectOne(&artist, "SELECT * FROM artists WHERE id=?", id)
 	if err == nil {
-		entity = artist
+		ar.populateAlbums(&entity, true)
+	}
 
-		// Populate albums.
-		albumRepo := AlbumRepository{AppContext: ar.AppContext}
-		albums, err := albumRepo.FindAlbumsForArtist(id)
-		if err == nil {
-			entity.Albums = albums
+	return
+}
+
+/*
+Fetches all artists from the database.
+
+@param hydrate
+	If true populate albums tracks.
+*/
+func (ar ArtistRepository) FindAll(hydrate bool) (entities domain.Artists, err error) {
+	_, err = ar.AppContext.DB.Select(&entities, "SELECT * FROM artists")
+	if hydrate {
+		for i := range entities {
+			ar.populateAlbums(&entities[i], hydrate)
 		}
 	}
 
@@ -65,4 +72,22 @@ func (ar ArtistRepository) Save(entity *domain.Artist) (err error) {
 	}
 
 	return nil
+}
+
+/**
+Delete an artist from the Database.
+*/
+func (ar ArtistRepository) Delete(artistId int) (err error) {
+	_, err = ar.AppContext.DB.Delete(artistId)
+	return
+}
+
+/**
+Helper function to populate albums.
+ */
+func (ar ArtistRepository) populateAlbums(artist *domain.Artist, hydrate bool) {
+	albumRepo := AlbumRepository{AppContext: ar.AppContext}
+	if albums, err := albumRepo.FindAlbumsForArtist(artist.Id, hydrate); err == nil {
+		artist.Albums = albums
+	}
 }

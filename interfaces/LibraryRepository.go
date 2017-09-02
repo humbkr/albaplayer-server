@@ -141,6 +141,47 @@ func (lr LibraryRepository) scanFolder(filePath string) {
 }
 
 /**
+Remove all dead files from library.
+ */
+func (lr LibraryRepository) Clean() {
+	trackRepo := TrackRepository{AppContext: lr.AppContext}
+	albumRepo := AlbumRepository{AppContext: lr.AppContext}
+	artistRepo := ArtistRepository{AppContext: lr.AppContext}
+
+	// Keep a trace of albums and artists to check after tracks deletion.
+	var relatedAlbums map[int]int
+	var relatedArtists map[int]int
+
+	tracks, err := trackRepo.FindAll()
+	if err == nil {
+		// Delete non existant tracks.
+		for _, track := range tracks {
+			if _, err := os.Stat(track.Path); os.IsNotExist(err) {
+				trackRepo.Delete(track.Id)
+				relatedAlbums[track.AlbumId]++
+				relatedArtists[track.ArtistId]++
+			}
+		}
+
+		// Delete albums if no more tracks in it.
+		for albumId := range relatedAlbums {
+			album, err := albumRepo.Find(albumId)
+			if err == nil && len(album.Tracks) == 0 {
+				albumRepo.Delete(album.Id)
+			}
+		}
+
+		// Delete artists if no more albums from them.
+		for artistId := range relatedArtists {
+			artist, err := artistRepo.Find(artistId)
+			if err == nil && len(artist.Albums) == 0 {
+				artistRepo.Delete(artist.Id)
+			}
+		}
+	}
+}
+
+/**
 Get media matadata from a file.
 
 Uses multiple libraries to get a maximum of info depending on the format.
