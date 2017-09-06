@@ -7,10 +7,27 @@ import (
 
 	"git.humbkr.com/jgalletta/alba-player/domain"
 	"github.com/go-gorp/gorp"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/viper"
 )
 
-func InitDb() (dbmap *gorp.DbMap, err error) {
+/**
+Interface to a datasource to abstract the underlying storage mecanism.
+ */
+type Datasource interface {
+	Exec(query string, args ...interface{}) (sql.Result, error)
+	SelectOne(holder interface{}, query string, args ...interface{}) error
+	Select(i interface{}, query string, args ...interface{}) ([]interface{}, error)
+	Get(i interface{}, keys ...interface{}) (interface{}, error)
+	Insert(list ...interface{}) error
+	Update(list ...interface{}) (int64, error)
+	Delete(list ...interface{}) (int64, error)
+}
+
+/**
+Initialiase the application main datasource.
+ */
+func InitAlbaDatasource() (ds Datasource, err error) {
 	connection, err := sql.Open(viper.GetString("DB.driver"), viper.GetString("DB.file"))
 	if err != nil {
 		return
@@ -22,7 +39,7 @@ func InitDb() (dbmap *gorp.DbMap, err error) {
 	}
 
 	// Construct a gorp DbMap.
-	dbmap = &gorp.DbMap{Db: connection, Dialect: gorp.SqliteDialect{}}
+	dbmap := &gorp.DbMap{Db: connection, Dialect: gorp.SqliteDialect{}}
 
 	// Bind tables to objects.
 	dbmap.AddTableWithName(domain.Artist{}, "artists").SetKeys(true, "Id")
@@ -35,5 +52,5 @@ func InitDb() (dbmap *gorp.DbMap, err error) {
 		log.Fatalln("Create tables failed", err)
 	}
 
-	return
+	return dbmap, nil
 }

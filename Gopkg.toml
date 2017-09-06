@@ -68,3 +68,7 @@
 [[constraint]]
   branch = "master"
   name = "github.com/dhowden/tag"
+
+[[constraint]]
+  name = "github.com/stretchr/testify"
+  version = "1.1.4"

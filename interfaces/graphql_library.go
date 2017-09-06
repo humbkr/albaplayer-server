@@ -207,7 +207,7 @@ func NewGraphQLInteractor(ci *business.LibraryInteractor) *graphQLInteractor {
 			"artists": &graphql.Field{
 				Type: graphql.NewList(artistType),
 				Resolve: func (g graphql.ResolveParams) (interface{}, error) {
-					return interactor.Library.ArtistRepository.FindAll(true)
+					return interactor.Library.GetAllArtists(true)
 				},
 			},
 			"artist": &graphql.Field{
@@ -225,13 +225,13 @@ func NewGraphQLInteractor(ci *business.LibraryInteractor) *graphQLInteractor {
 						return nil, err
 					}
 
-					return interactor.Library.ArtistRepository.Find(id)
+					return interactor.Library.ArtistRepository.Get(id)
 				},
 			},
 			"albums": &graphql.Field{
 				Type: graphql.NewList(albumType),
 				Resolve: func (g graphql.ResolveParams) (interface{}, error) {
-					return interactor.Library.AlbumRepository.FindAll(true)
+					return interactor.Library.AlbumRepository.GetAll(true)
 				},
 			},
 			"album": &graphql.Field{
@@ -249,13 +249,13 @@ func NewGraphQLInteractor(ci *business.LibraryInteractor) *graphQLInteractor {
 						return nil, err
 					}
 
-					return interactor.Library.AlbumRepository.Find(id)
+					return interactor.Library.AlbumRepository.Get(id)
 				},
 			},
 			"tracks": &graphql.Field{
 				Type: graphql.NewList(trackType),
 				Resolve: func (g graphql.ResolveParams) (interface{}, error) {
-					return interactor.Library.TrackRepository.FindAll()
+					return interactor.Library.TrackRepository.GetAll()
 				},
 			},
 			"track": &graphql.Field{
@@ -273,7 +273,7 @@ func NewGraphQLInteractor(ci *business.LibraryInteractor) *graphQLInteractor {
 						return nil, err
 					}
 
-					return interactor.Library.TrackRepository.Find(id)
+					return interactor.Library.TrackRepository.Get(id)
 				},
 			},
 		},

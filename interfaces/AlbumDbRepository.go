@@ -5,18 +5,17 @@ import (
 	"git.humbkr.com/jgalletta/alba-player/domain"
 )
 
-type AlbumRepository struct {
+type AlbumDbRepository struct {
 	AppContext *AppContext
 }
 
 /*
 Fetches an album from the database.
 */
-func (ar AlbumRepository) Find(id int) (entity domain.Album, err error) {
-	var album domain.Album
-	err = ar.AppContext.DB.SelectOne(&album, "SELECT * FROM albums WHERE id=?", id)
-	if err == nil {
-		entity = album
+func (ar AlbumDbRepository) Get(id int) (entity domain.Album, err error) {
+	object, err := ar.AppContext.DB.Get(domain.Album{}, id)
+	if err == nil && object != nil {
+		entity = object.(domain.Album)
 		ar.populateTracks(&entity)
 	}
 
@@ -29,7 +28,7 @@ Fetches all albums from the database.
 @param hydrate
 	If true populate albums tracks.
 */
-func (ar AlbumRepository) FindAll(hydrate bool) (entities domain.Albums, err error) {
+func (ar AlbumDbRepository) GetAll(hydrate bool) (entities domain.Albums, err error) {
 	_, err = ar.AppContext.DB.Select(&entities, "SELECT * FROM albums")
 	if hydrate {
 		for i := range entities {
@@ -43,7 +42,7 @@ func (ar AlbumRepository) FindAll(hydrate bool) (entities domain.Albums, err err
 /**
 Fetches an album from database.
 */
-func (ar AlbumRepository) FindByName(name string, artistId int) (entity domain.Album, err error) {
+func (ar AlbumDbRepository) GetByName(name string, artistId int) (entity domain.Album, err error) {
 	var entities domain.Albums
 	_, err = ar.AppContext.DB.Select(&entities, "SELECT * FROM albums WHERE title = ? AND artist_id = ?", name, artistId)
 
@@ -51,7 +50,7 @@ func (ar AlbumRepository) FindByName(name string, artistId int) (entity domain.A
 		if len(entities) > 0 {
 			entity = entities[0]
 		} else {
-			err = errors.New("No result found")
+			err = errors.New("no result found")
 		}
 	}
 
@@ -61,7 +60,7 @@ func (ar AlbumRepository) FindByName(name string, artistId int) (entity domain.A
 /**
 Fetches albums having the specified artistId from database ordered by year.
 */
-func (ar AlbumRepository) FindAlbumsForArtist(artistId int, hydrate bool) (entities domain.Albums, err error) {
+func (ar AlbumDbRepository) GetAlbumsForArtist(artistId int, hydrate bool) (entities domain.Albums, err error) {
 	_, err = ar.AppContext.DB.Select(&entities, "SELECT * FROM albums WHERE artist_id = ? ORDER BY year", artistId)
 	if err == nil && hydrate {
 		for i := range entities {
@@ -75,7 +74,7 @@ func (ar AlbumRepository) FindAlbumsForArtist(artistId int, hydrate bool) (entit
 /**
 Create or update an album in the Database.
 */
-func (ar AlbumRepository) Save(entity *domain.Album) (err error) {
+func (ar AlbumDbRepository) Save(entity *domain.Album) (err error) {
 	if entity.Id != 0 {
 		// Update.
 		_, err = ar.AppContext.DB.Update(entity)
@@ -92,17 +91,33 @@ func (ar AlbumRepository) Save(entity *domain.Album) (err error) {
 /**
 Delete an album from the Database.
 */
-func (ar AlbumRepository) Delete(albumId int) (err error) {
-	_, err = ar.AppContext.DB.Delete(albumId)
+func (ar AlbumDbRepository) Delete(entity *domain.Album) (err error) {
+	// Delete all tracks.
+	if len(entity.Tracks) == 0 {
+		ar.populateTracks(entity)
+	}
+	tracksRepo := TrackDbRepository{AppContext: ar.AppContext}
+	for i := range entity.Tracks {
+		tracksRepo.Delete(&entity.Tracks[i])
+	}
+
+	// Then delete album.
+	_, err = ar.AppContext.DB.Delete(entity)
 	return
+}
+
+// Check if an album exists for a given id.
+func (ar AlbumDbRepository) Exists(id int) bool {
+	entity, err := ar.AppContext.DB.Get(domain.Album{}, id)
+	return err == nil && entity != nil
 }
 
 /**
 Helper function to populate tracks.
  */
-func (ar AlbumRepository) populateTracks(album *domain.Album) {
-	tracksRepo := TrackRepository{AppContext: ar.AppContext}
-	if tracks, err := tracksRepo.FindTracksForAlbum(album.Id); err == nil {
+func (ar AlbumDbRepository) populateTracks(album *domain.Album) {
+	tracksRepo := TrackDbRepository{AppContext: ar.AppContext}
+	if tracks, err := tracksRepo.GetTracksForAlbum(album.Id); err == nil {
 		album.Tracks = tracks
 	}
 }

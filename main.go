@@ -32,17 +32,19 @@ func main() {
 	})
 
 	// Create app context.
-	appContext, err := interfaces.NewAppContext()
+	var appContext interfaces.AppContext
+	datasource, err := interfaces.InitAlbaDatasource()
 	if err != nil {
 		panic(fmt.Errorf("Error during the application context creation: %s \n", err))
 	}
+	appContext.DB = datasource
 
 	// Instanciate all we need to work on the media library.
 	libraryInteractor := new(business.LibraryInteractor)
-	libraryInteractor.ArtistRepository = interfaces.ArtistRepository{AppContext: appContext}
-	libraryInteractor.AlbumRepository = interfaces.AlbumRepository{AppContext: appContext}
-	libraryInteractor.TrackRepository = interfaces.TrackRepository{AppContext: appContext}
-	libraryInteractor.LibraryRepository = interfaces.LibraryRepository{AppContext: appContext}
+	libraryInteractor.ArtistRepository = interfaces.ArtistDbRepository{AppContext: &appContext}
+	libraryInteractor.AlbumRepository = interfaces.AlbumDbRepository{AppContext: &appContext}
+	libraryInteractor.TrackRepository = interfaces.TrackDbRepository{AppContext: &appContext}
+	libraryInteractor.LibraryRepository = interfaces.LibraryDbRepository{AppContext: &appContext}
 
 	// Instanciate the main Queue.
 	nowPlaying := new(business.Queue)
