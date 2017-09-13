@@ -5,6 +5,7 @@ type Track struct {
 	Title    string `db:"title"` // Mandatory.
 	AlbumId  int    `db:"album_id"`
 	ArtistId int    `db:"artist_id"`
+	CoverId int     `db:"cover_id"`
 	Disc     string `db:"disc"`
 	Number   int    `db:"number"`
 	Duration int    `db:"duration"` // Duration in seconds.

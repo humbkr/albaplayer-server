@@ -1,9 +1,8 @@
-package repositories_test
+package interfaces
 
 import (
 	"testing"
 	"github.com/stretchr/testify/suite"
-	"git.humbkr.com/jgalletta/alba-player/interfaces"
 	"github.com/stretchr/testify/assert"
 	"log"
 	"git.humbkr.com/jgalletta/alba-player/domain"
@@ -11,31 +10,38 @@ import (
 
 type TrackRepoTestSuite struct {
 	suite.Suite
-	TrackRepository interfaces.TrackDbRepository
+	TrackRepository TrackDbRepository
+}
+
+/**
+Go testing framework entry point.
+ */
+func TestTrackRepoTestSuite(t *testing.T) {
+	suite.Run(t, new(TrackRepoTestSuite))
 }
 
 func (suite *TrackRepoTestSuite) SetupSuite() {
-	ds, err := CreateTestDatasource()
+	ds, err := createTestDatasource()
 	if err != nil {
 		log.Fatal(err)
 	}
-	appContext := interfaces.AppContext{DB: ds}
-	suite.TrackRepository = interfaces.TrackDbRepository{AppContext: &appContext}
+	appContext := AppContext{DB: ds}
+	suite.TrackRepository = TrackDbRepository{AppContext: &appContext}
 }
 
 func (suite *TrackRepoTestSuite) TearDownSuite() {
-	if err := CloseTestDataSource(suite.TrackRepository.AppContext.DB); err != nil {
+	if err := closeTestDataSource(suite.TrackRepository.AppContext.DB); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func (suite *TrackRepoTestSuite) SetupTest() {
-	ResetTestDataSource(suite.TrackRepository.AppContext.DB)
+	resetTestDataSource(suite.TrackRepository.AppContext.DB)
 }
 
-func (suite *TrackRepoTestSuite) TestFind() {
+func (suite *TrackRepoTestSuite) TestGet() {
 	// Test track retrieval.
-	track, err := suite.TrackRepository.Find(1)
+	track, err := suite.TrackRepository.Get(1)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), 1, track.Id)
 	assert.Equal(suite.T(), 1, track.AlbumId)
@@ -51,12 +57,12 @@ func (suite *TrackRepoTestSuite) TestFind() {
 	// TODO Test double disc albums.
 
 	// Test to get a non existing track.
-	track, err = suite.TrackRepository.Find(99)
+	track, err = suite.TrackRepository.Get(99)
 	assert.NotNil(suite.T(), err)
 }
 
-func (suite *TrackRepoTestSuite) TestFindAll() {
-	tracks, err := suite.TrackRepository.FindAll()
+func (suite *TrackRepoTestSuite) TestGetAll() {
+	tracks, err := suite.TrackRepository.GetAll()
 	assert.Nil(suite.T(), err)
 	assert.NotEmpty(suite.T(), tracks)
 	for _, track := range tracks {
@@ -66,9 +72,9 @@ func (suite *TrackRepoTestSuite) TestFindAll() {
 	}
 }
 
-func (suite *TrackRepoTestSuite) TestFindByName() {
+func (suite *TrackRepoTestSuite) TestGetByName() {
 	// Test track retrieval.
-	track, err := suite.TrackRepository.FindByName("Forty Six & 2", 1, 1)
+	track, err := suite.TrackRepository.GetByName("Forty Six & 2", 1, 1)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), 5, track.Id)
 	assert.Equal(suite.T(), 1, track.AlbumId)
@@ -82,20 +88,20 @@ func (suite *TrackRepoTestSuite) TestFindByName() {
 	assert.Equal(suite.T(), "/home/test/music/tool/aenima/05 - Forty Six & 2.mp3", track.Path)
 
 	// Test to get a track with non existant name.
-	_, err = suite.TrackRepository.FindByName("Bogus", 1, 1)
+	_, err = suite.TrackRepository.GetByName("Bogus", 1, 1)
 	assert.NotNil(suite.T(), err)
 
 	// Test to get a track with wrong artist id.
-	_, err = suite.TrackRepository.FindByName("Forty Six & 2", 2, 1)
+	_, err = suite.TrackRepository.GetByName("Forty Six & 2", 2, 1)
 	assert.NotNil(suite.T(), err)
 
 	// Test to get a track with wrong album id.
-	_, err = suite.TrackRepository.FindByName("Forty Six & 2", 1, 2)
+	_, err = suite.TrackRepository.GetByName("Forty Six & 2", 1, 2)
 	assert.NotNil(suite.T(), err)
 }
 
-func (suite *TrackRepoTestSuite) TestFindTracksForAlbum() {
-	tracks, err := suite.TrackRepository.FindTracksForAlbum(1)
+func (suite *TrackRepoTestSuite) TestGetTracksForAlbum() {
+	tracks, err := suite.TrackRepository.GetTracksForAlbum(1)
 	assert.Nil(suite.T(), err)
 	assert.NotEmpty(suite.T(), tracks)
 	assert.Equal(suite.T(), 15, len(tracks))
@@ -124,7 +130,7 @@ func (suite *TrackRepoTestSuite) TestSave() {
 	assert.Nil(suite.T(), err)
 	assert.NotEmpty(suite.T(), newTrack.Id)
 
-	insertednewTrack, errInsert := suite.TrackRepository.Find(newTrack.Id)
+	insertednewTrack, errInsert := suite.TrackRepository.Get(newTrack.Id)
 	assert.Nil(suite.T(), errInsert)
 	assert.Equal(suite.T(), newTrack.Id, insertednewTrack.Id)
 	assert.Equal(suite.T(), 2, insertednewTrack.AlbumId)
@@ -149,7 +155,7 @@ func (suite *TrackRepoTestSuite) TestSave() {
 	assert.Nil(suite.T(), errUpdate)
 	assert.NotEmpty(suite.T(), insertednewTrack.Id)
 
-	updatedTrack, errGetMod := suite.TrackRepository.Find(newTrack.Id)
+	updatedTrack, errGetMod := suite.TrackRepository.Get(newTrack.Id)
 	assert.Nil(suite.T(), errGetMod)
 	assert.Equal(suite.T(), newTrack.Id, updatedTrack.Id)
 	assert.Equal(suite.T(), 1, updatedTrack.AlbumId)
@@ -161,22 +167,6 @@ func (suite *TrackRepoTestSuite) TestSave() {
 	assert.Equal(suite.T(),  "Thrash Metal", updatedTrack.Genre)
 	assert.Equal(suite.T(), "/home/test/music/artist test/album test/05 - Update track test.mp3", updatedTrack.Path)
 
-	// Test to insert a track without title.
-	newTrackNoTitle := &domain.Track{
-		Path: "/test insert no title.mp3",
-	}
-
-	errNoTitle := suite.TrackRepository.Save(newTrackNoTitle)
-	assert.NotNil(suite.T(), errNoTitle)
-
-	// Test to insert a track without path.
-	newTrackNoPath := &domain.Track{
-		Title: "Test insert track no path",
-	}
-
-	errNoPath := suite.TrackRepository.Save(newTrackNoPath)
-	assert.NotNil(suite.T(), errNoPath)
-
 	// Test to insert a new track with a prepopulated trackId (= update a non existant track).
 	// Note: it seems gorp.Dbmap.Update() fails silently.
 	newTrackWithId := &domain.Track{
@@ -187,21 +177,13 @@ func (suite *TrackRepoTestSuite) TestSave() {
 
 	errBogusId := suite.TrackRepository.Save(newTrackWithId)
 	assert.Nil(suite.T(), errBogusId)
-
-	// Test to update a track with an empty title.
-	updatedTrack.Title = ""
-	errUpdateEmptyTitle := suite.TrackRepository.Save(&updatedTrack)
-	assert.NotNil(suite.T(), errUpdateEmptyTitle)
-
-	// TODO test to insert a track with a non existant artist id.
-	// TODO test to insert a track with a non existant album id.
 }
 
 func (suite *TrackRepoTestSuite) TestDelete() {
 	var trackId = 1
 
 	// Get track to delete.
-	track, err := suite.TrackRepository.Find(trackId)
+	track, err := suite.TrackRepository.Get(trackId)
 	assert.Nil(suite.T(), err)
 
 	// Delete track.
@@ -209,13 +191,6 @@ func (suite *TrackRepoTestSuite) TestDelete() {
 	assert.Nil(suite.T(), err)
 
 	// Check track has been removed from the database.
-	_, err = suite.TrackRepository.Find(trackId)
+	_, err = suite.TrackRepository.Get(trackId)
 	assert.NotNil(suite.T(), err)
-}
-
-/**
-Go testing framework entry point.
- */
-func TestTrackRepoTestSuite(t *testing.T) {
-	suite.Run(t, new(TrackRepoTestSuite))
 }

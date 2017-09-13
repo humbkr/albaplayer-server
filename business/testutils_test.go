@@ -1,4 +1,4 @@
-package business_test
+package business
 
 import (
 	"git.humbkr.com/jgalletta/alba-player/domain"
@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"fmt"
 	"math/rand"
-	"git.humbkr.com/jgalletta/alba-player/business"
 )
 
 /*
@@ -15,8 +14,8 @@ import (
 Mock stuff for business tests.
  */
 
-func createMockLibraryInteractor() (*business.LibraryInteractor) {
-	interactor := new(business.LibraryInteractor)
+func createMockLibraryInteractor() (*LibraryInteractor) {
+	interactor := new(LibraryInteractor)
 	interactor.ArtistRepository = new(ArtistRepositoryMock)
 	interactor.AlbumRepository = new(AlbumRepositoryMock)
 	interactor.TrackRepository = new(TrackRepositoryMock)

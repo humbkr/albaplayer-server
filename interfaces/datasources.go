@@ -45,6 +45,7 @@ func InitAlbaDatasource() (ds Datasource, err error) {
 	dbmap.AddTableWithName(domain.Artist{}, "artists").SetKeys(true, "Id")
 	dbmap.AddTableWithName(domain.Album{}, "albums").SetKeys(true, "Id")
 	dbmap.AddTableWithName(domain.Track{}, "tracks").SetKeys(true, "Id")
+	dbmap.AddTableWithName(domain.Cover{}, "covers").SetKeys(true, "Id")
 
 	// Create the tables.
 	err = dbmap.CreateTablesIfNotExists()

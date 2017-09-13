@@ -1,9 +1,8 @@
-package repositories_test
+package interfaces
 
 import (
 	"testing"
 	"github.com/stretchr/testify/suite"
-	"git.humbkr.com/jgalletta/alba-player/interfaces"
 	"github.com/stretchr/testify/assert"
 	"log"
 	"git.humbkr.com/jgalletta/alba-player/domain"
@@ -11,31 +10,38 @@ import (
 
 type ArtistRepoTestSuite struct {
 	suite.Suite
-	ArtistRepository interfaces.ArtistDbRepository
+	ArtistRepository ArtistDbRepository
+}
+
+/**
+Go testing framework entry point.
+ */
+func TestArtistRepoTestSuite(t *testing.T) {
+	suite.Run(t, new(ArtistRepoTestSuite))
 }
 
 func (suite *ArtistRepoTestSuite) SetupSuite() {
-	ds, err := CreateTestDatasource()
+	ds, err := createTestDatasource()
 	if err != nil {
 		log.Fatal(err)
 	}
-	appContext := interfaces.AppContext{DB: ds}
-	suite.ArtistRepository = interfaces.ArtistDbRepository{AppContext: &appContext}
+	appContext := AppContext{DB: ds}
+	suite.ArtistRepository = ArtistDbRepository{AppContext: &appContext}
 }
 
 func (suite *ArtistRepoTestSuite) TearDownSuite() {
-	if err := CloseTestDataSource(suite.ArtistRepository.AppContext.DB); err != nil {
+	if err := closeTestDataSource(suite.ArtistRepository.AppContext.DB); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func (suite *ArtistRepoTestSuite) SetupTest() {
-	ResetTestDataSource(suite.ArtistRepository.AppContext.DB)
+	resetTestDataSource(suite.ArtistRepository.AppContext.DB)
 }
 
-func (suite *ArtistRepoTestSuite) TestFind() {
+func (suite *ArtistRepoTestSuite) TestGet() {
 	// Test artist retrieval.
-	artist, err := suite.ArtistRepository.Find(1)
+	artist, err := suite.ArtistRepository.Get(1)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), 1, artist.Id)
 	assert.Equal(suite.T(), "Tool", artist.Name)
@@ -43,13 +49,13 @@ func (suite *ArtistRepoTestSuite) TestFind() {
 	assert.Len(suite.T(), artist.Albums, 1)
 
 	// Test to get a non existing artist.
-	artist, err = suite.ArtistRepository.Find(99)
+	artist, err = suite.ArtistRepository.Get(99)
 	assert.NotNil(suite.T(), err)
 }
 
-func (suite *ArtistRepoTestSuite) TestFindAll() {
+func (suite *ArtistRepoTestSuite) TestGetAll() {
 	// Test to get artist without albums.
-	artists, err := suite.ArtistRepository.FindAll(false)
+	artists, err := suite.ArtistRepository.GetAll(false)
 	assert.Nil(suite.T(), err)
 	assert.NotEmpty(suite.T(), artists)
 	for _, artist := range artists {
@@ -59,7 +65,7 @@ func (suite *ArtistRepoTestSuite) TestFindAll() {
 	}
 
 	// Test to get artist with albums.
-	artists, err = suite.ArtistRepository.FindAll(true)
+	artists, err = suite.ArtistRepository.GetAll(true)
 	assert.Nil(suite.T(), err)
 	assert.NotEmpty(suite.T(), artists)
 	for _, artist := range artists {
@@ -69,16 +75,16 @@ func (suite *ArtistRepoTestSuite) TestFindAll() {
 	}
 }
 
-func (suite *ArtistRepoTestSuite) TestFindByName() {
+func (suite *ArtistRepoTestSuite) TestGetByName() {
 	// Test artist retrieval.
-	artist, err := suite.ArtistRepository.FindByName("Tool")
+	artist, err := suite.ArtistRepository.GetByName("Tool")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), 1, artist.Id)
 	assert.Equal(suite.T(), "Tool", artist.Name)
 	assert.Empty(suite.T(), artist.Albums)
 
 	// Test to get an artist with non existant name.
-	_, err = suite.ArtistRepository.FindByName("Bogus")
+	_, err = suite.ArtistRepository.GetByName("Bogus")
 	assert.NotNil(suite.T(), err)
 }
 
@@ -93,7 +99,7 @@ func (suite *ArtistRepoTestSuite) TestSave() {
 	assert.Nil(suite.T(), err)
 	assert.NotEmpty(suite.T(), newArtist.Id)
 
-	insertedNewArtist, errInsert := suite.ArtistRepository.Find(newArtist.Id)
+	insertedNewArtist, errInsert := suite.ArtistRepository.Get(newArtist.Id)
 	assert.Nil(suite.T(), errInsert)
 	assert.Equal(suite.T(), newArtist.Id, insertedNewArtist.Id)
 	assert.Equal(suite.T(), "Insert new artist test", insertedNewArtist.Name)
@@ -105,17 +111,11 @@ func (suite *ArtistRepoTestSuite) TestSave() {
 	assert.Nil(suite.T(), errUpdate)
 	assert.NotEmpty(suite.T(), insertedNewArtist.Id)
 
-	updatedArtist, errGetMod := suite.ArtistRepository.Find(newArtist.Id)
+	updatedArtist, errGetMod := suite.ArtistRepository.Get(newArtist.Id)
 	assert.Nil(suite.T(), errGetMod)
 	assert.Equal(suite.T(), newArtist.Id, updatedArtist.Id)
 	assert.Equal(suite.T(), "Update artist test", updatedArtist.Name)
 	assert.Empty(suite.T(), updatedArtist.Albums)
-
-	// Test to insert an artist without name.
-	newArtistNoName := &domain.Artist{}
-
-	errNoTitle := suite.ArtistRepository.Save(newArtistNoName)
-	assert.NotNil(suite.T(), errNoTitle)
 
 	// Test to insert a new artist with a prepopulated Id (= update a non existant artist).
 	// Note: it seems gorp.Dbmap.Update() fails silently.
@@ -126,18 +126,13 @@ func (suite *ArtistRepoTestSuite) TestSave() {
 
 	errBogusId := suite.ArtistRepository.Save(newArtistWithId)
 	assert.Nil(suite.T(), errBogusId)
-
-	// Test to update an album with an empty title.
-	updatedArtist.Name = ""
-	errUpdateEmptyTitle := suite.ArtistRepository.Save(&updatedArtist)
-	assert.NotNil(suite.T(), errUpdateEmptyTitle)
  }
 
 func (suite *ArtistRepoTestSuite) TestDelete() {
 	var artistId = 1
 
 	//Get artist to delete.
-	artist, err := suite.ArtistRepository.Find(artistId)
+	artist, err := suite.ArtistRepository.Get(artistId)
 	assert.Nil(suite.T(), err)
 
 	// Delete artist.
@@ -145,21 +140,14 @@ func (suite *ArtistRepoTestSuite) TestDelete() {
 	assert.Nil(suite.T(), err)
 
 	// Check artist has been removed from the database.
-	_, err = suite.ArtistRepository.Find(artistId)
+	_, err = suite.ArtistRepository.Get(artistId)
 	assert.NotNil(suite.T(), err)
 
 	// Check artist's albums have been removed too.
-	albumRepo := interfaces.AlbumDbRepository{AppContext: suite.ArtistRepository.AppContext}
-	albums, err := albumRepo.FindAlbumsForArtist(artistId, false)
+	albumRepo := AlbumDbRepository{AppContext: suite.ArtistRepository.AppContext}
+	albums, err := albumRepo.GetAlbumsForArtist(artistId, false)
 	assert.Nil(suite.T(), err)
 	assert.Empty(suite.T(), albums)
 
 	// Check that tracks have been removed too is already done in albumRepository tests.
-}
-
-/**
-Go testing framework entry point.
- */
-func TestArtistRepoTestSuite(t *testing.T) {
-	suite.Run(t, new(AlbumRepoTestSuite))
 }

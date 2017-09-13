@@ -16,8 +16,10 @@ Fetches an artist from the database.
 func (ar ArtistDbRepository) Get(id int) (entity domain.Artist, err error) {
 	object, err := ar.AppContext.DB.Get(domain.Artist{}, id)
 	if err == nil && object != nil {
-		entity = object.(domain.Artist)
+		entity = *object.(*domain.Artist)
 		ar.populateAlbums(&entity, true)
+	} else {
+		err = errors.New("no artist found")
 	}
 
 	return
@@ -96,8 +98,8 @@ func (ar ArtistDbRepository) Delete(entity *domain.Artist) (err error) {
 
 // Check if an artist exists for a given id.
 func (ar ArtistDbRepository) Exists(id int) bool {
-	entity, err := ar.AppContext.DB.Get(domain.Artist{}, id)
-	return err == nil && entity != nil
+	_, err := ar.Get(id)
+	return err == nil
 }
 
 /**

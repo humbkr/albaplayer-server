@@ -87,3 +87,26 @@ type TrackRepository interface {
 	// Tests if an entity exists in datasource.
 	Exists(id int) bool
 }
+
+type CoverRepository interface {
+	// Gets an entity from a datasource.
+	//
+	// Returns an hydrated entity if entity is fund, else an error.
+	Get(id int) (entity Cover, err error)
+
+	// Saves an entity to a datasource.
+	Save(entity *Cover) (err error)
+
+	// Deletes an entity from a datasource.
+	//
+	// Does not return an error if the entity doesn't exists on the datasource or no entity id is given.
+	Delete(entity *Cover) (err error)
+
+	// Tests if an entity exists in datasource.
+	Exists(id int) bool
+
+	// Checks if a entity exists or not by hash.
+	//
+	// Returns cover.Id if exists, else 0.
+	ExistsByHash(hash string) int
+}

@@ -1,9 +1,8 @@
-package repositories_test
+package interfaces
 
 import (
 	"testing"
 	"github.com/stretchr/testify/suite"
-	"git.humbkr.com/jgalletta/alba-player/interfaces"
 	"github.com/stretchr/testify/assert"
 	"log"
 	"git.humbkr.com/jgalletta/alba-player/domain"
@@ -11,31 +10,36 @@ import (
 
 type AlbumRepoTestSuite struct {
 	suite.Suite
-	AlbumRepository interfaces.AlbumDbRepository
+	AlbumRepository AlbumDbRepository
+}
+
+// Go testing framework entry point.
+func TestAlbumRepoTestSuite(t *testing.T) {
+	suite.Run(t, new(AlbumRepoTestSuite))
 }
 
 func (suite *AlbumRepoTestSuite) SetupSuite() {
-	ds, err := CreateTestDatasource()
+	ds, err := createTestDatasource()
 	if err != nil {
 		log.Fatal(err)
 	}
-	appContext := interfaces.AppContext{DB: ds}
-	suite.AlbumRepository = interfaces.AlbumDbRepository{AppContext: &appContext}
+	appContext := AppContext{DB: ds}
+	suite.AlbumRepository = AlbumDbRepository{AppContext: &appContext}
 }
 
 func (suite *AlbumRepoTestSuite) TearDownSuite() {
-	if err := CloseTestDataSource(suite.AlbumRepository.AppContext.DB); err != nil {
+	if err := closeTestDataSource(suite.AlbumRepository.AppContext.DB); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func (suite *AlbumRepoTestSuite) SetupTest() {
-	ResetTestDataSource(suite.AlbumRepository.AppContext.DB)
+	resetTestDataSource(suite.AlbumRepository.AppContext.DB)
 }
 
-func (suite *AlbumRepoTestSuite) TestFind() {
+func (suite *AlbumRepoTestSuite) TestGet() {
 	// Test album retrieval.
-	album, err := suite.AlbumRepository.Find(1)
+	album, err := suite.AlbumRepository.Get(1)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), 1, album.Id)
 	assert.Equal(suite.T(), 1, album.ArtistId)
@@ -45,13 +49,13 @@ func (suite *AlbumRepoTestSuite) TestFind() {
 	assert.Len(suite.T(), album.Tracks, 15)
 
 	// Test to get a non existing album.
-	album, err = suite.AlbumRepository.Find(99)
+	album, err = suite.AlbumRepository.Get(99)
 	assert.NotNil(suite.T(), err)
 }
 
-func (suite *AlbumRepoTestSuite) TestFindAll() {
+func (suite *AlbumRepoTestSuite) TestGetAll() {
 	// Test to get albums without tracks.
-	albums, err := suite.AlbumRepository.FindAll(false)
+	albums, err := suite.AlbumRepository.GetAll(false)
 	assert.Nil(suite.T(), err)
 	assert.NotEmpty(suite.T(), albums)
 	for _, album := range albums {
@@ -61,7 +65,7 @@ func (suite *AlbumRepoTestSuite) TestFindAll() {
 	}
 
 	// Test to get albums with tracks.
-	albums, err = suite.AlbumRepository.FindAll(true)
+	albums, err = suite.AlbumRepository.GetAll(true)
 	assert.Nil(suite.T(), err)
 	assert.NotEmpty(suite.T(), albums)
 	for _, album := range albums {
@@ -71,9 +75,9 @@ func (suite *AlbumRepoTestSuite) TestFindAll() {
 	}
 }
 
-func (suite *AlbumRepoTestSuite) TestFindByName() {
+func (suite *AlbumRepoTestSuite) TestGetByName() {
 	// Test album retrieval.
-	album, err := suite.AlbumRepository.FindByName("Ænima", 1)
+	album, err := suite.AlbumRepository.GetByName("Ænima", 1)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), 1, album.Id)
 	assert.Equal(suite.T(), 1, album.ArtistId)
@@ -82,17 +86,17 @@ func (suite *AlbumRepoTestSuite) TestFindByName() {
 	assert.Empty(suite.T(), album.Tracks)
 
 	// Test to get an album with non existant name.
-	_, err = suite.AlbumRepository.FindByName("Bogus", 1)
+	_, err = suite.AlbumRepository.GetByName("Bogus", 1)
 	assert.NotNil(suite.T(), err)
 
 	// Test to get an album with wrong artist id.
-	_, err = suite.AlbumRepository.FindByName("Ænima", 2)
+	_, err = suite.AlbumRepository.GetByName("Ænima", 2)
 	assert.NotNil(suite.T(), err)
 }
 
-func (suite *AlbumRepoTestSuite) TestFindAlbumsForArtist() {
+func (suite *AlbumRepoTestSuite) TestGetAlbumsForArtist() {
 	// Test to get albums without tracks.
-	albums, err := suite.AlbumRepository.FindAlbumsForArtist(1, false)
+	albums, err := suite.AlbumRepository.GetAlbumsForArtist(1, false)
 	assert.Nil(suite.T(), err)
 	assert.NotEmpty(suite.T(), albums)
 	for _, album := range albums {
@@ -103,7 +107,7 @@ func (suite *AlbumRepoTestSuite) TestFindAlbumsForArtist() {
 	}
 
 	// Test to get albums with tracks.
-	albums, err = suite.AlbumRepository.FindAlbumsForArtist(2, true)
+	albums, err = suite.AlbumRepository.GetAlbumsForArtist(2, true)
 	assert.Nil(suite.T(), err)
 	assert.NotEmpty(suite.T(), albums)
 	for _, album := range albums {
@@ -134,7 +138,7 @@ func (suite *AlbumRepoTestSuite) TestSave() {
 	assert.Nil(suite.T(), err)
 	assert.NotEmpty(suite.T(), newAlbum.Id)
 
-	insertedNewAlbum, errInsert := suite.AlbumRepository.Find(newAlbum.Id)
+	insertedNewAlbum, errInsert := suite.AlbumRepository.Get(newAlbum.Id)
 	assert.Nil(suite.T(), errInsert)
 	assert.Equal(suite.T(), newAlbum.Id, insertedNewAlbum.Id)
 	assert.Equal(suite.T(), 2, insertedNewAlbum.ArtistId)
@@ -150,22 +154,13 @@ func (suite *AlbumRepoTestSuite) TestSave() {
 	assert.Nil(suite.T(), errUpdate)
 	assert.NotEmpty(suite.T(), insertedNewAlbum.Id)
 
-	updatedAlbum, errGetMod := suite.AlbumRepository.Find(newAlbum.Id)
+	updatedAlbum, errGetMod := suite.AlbumRepository.Get(newAlbum.Id)
 	assert.Nil(suite.T(), errGetMod)
 	assert.Equal(suite.T(), newAlbum.Id, updatedAlbum.Id)
 	assert.Equal(suite.T(), 1, updatedAlbum.ArtistId)
 	assert.Equal(suite.T(), "Update album test", updatedAlbum.Title)
 	assert.Equal(suite.T(), "1988", updatedAlbum.Year)
 	assert.Empty(suite.T(), updatedAlbum.Tracks)
-
-	// Test to insert an album without title.
-	newAlbumNoTitle := &domain.Album{
-		ArtistId: 2,
-		Year: "2017",
-	}
-
-	errNoTitle := suite.AlbumRepository.Save(newAlbumNoTitle)
-	assert.NotNil(suite.T(), errNoTitle)
 
 	// Test to insert a new album with a prepopulated albumId (= update a non existant album).
 	// Note: it seems gorp.Dbmap.Update() fails silently.
@@ -177,20 +172,13 @@ func (suite *AlbumRepoTestSuite) TestSave() {
 
 	errBogusId := suite.AlbumRepository.Save(newAlbumWithId)
 	assert.Nil(suite.T(), errBogusId)
-
-	// Test to update an album with an empty title.
-	updatedAlbum.Title = ""
-	errUpdateEmptyTitle := suite.AlbumRepository.Save(&updatedAlbum)
-	assert.NotNil(suite.T(), errUpdateEmptyTitle)
-
-	// TODO test to insert an album with a non existant artist id.
 }
 
 func (suite *AlbumRepoTestSuite) TestDelete() {
 	var albumId = 1
 
 	// Get album to delete.
-	album, err := suite.AlbumRepository.Find(albumId)
+	album, err := suite.AlbumRepository.Get(albumId)
 	assert.Nil(suite.T(), err)
 
 	// Delete album.
@@ -198,19 +186,12 @@ func (suite *AlbumRepoTestSuite) TestDelete() {
 	assert.Nil(suite.T(), err)
 
 	// Check album has been removed from the database.
-	_, err = suite.AlbumRepository.Find(albumId)
+	_, err = suite.AlbumRepository.Get(albumId)
 	assert.NotNil(suite.T(), err)
 
 	// Check album tracks have been removed too.
-	trackRepo := interfaces.TrackDbRepository{AppContext: suite.AlbumRepository.AppContext}
-	tracks, err := trackRepo.FindTracksForAlbum(albumId)
+	trackRepo := TrackDbRepository{AppContext: suite.AlbumRepository.AppContext}
+	tracks, err := trackRepo.GetTracksForAlbum(albumId)
 	assert.Nil(suite.T(), err)
 	assert.Empty(suite.T(), tracks)
-}
-
-/**
-Go testing framework entry point.
- */
-func TestAlbumRepoTestSuite(t *testing.T) {
-	suite.Run(t, new(AlbumRepoTestSuite))
 }

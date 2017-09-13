@@ -17,6 +17,7 @@ type graphQLInteractor struct {
 	Library *business.LibraryInteractor
 }
 
+// Defines static parts of artist type.
 var artistType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "Artist",
 	Fields: graphql.Fields{
@@ -56,6 +57,7 @@ var artistType = graphql.NewObject(graphql.ObjectConfig{
 	},
 })
 
+// Defines static parts of album type.
 var albumType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "Album",
 	Fields: graphql.Fields{
@@ -106,6 +108,7 @@ var albumType = graphql.NewObject(graphql.ObjectConfig{
 	},
 })
 
+// Defines static parts of track type.
 var trackType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "Track",
 	Fields: graphql.Fields{
@@ -197,10 +200,56 @@ Builds GraphQL Schema, initialise dynamic fields on types.
 func NewGraphQLInteractor(ci *business.LibraryInteractor) *graphQLInteractor {
 	interactor := &graphQLInteractor{Library:ci}
 
-	/**
-	 * This is the type that will be the root of our query,
-	 * and the entry point into our schema.
-	 */
+	// Define dynamic fields on types.
+	albumType.AddFieldConfig("artist", &graphql.Field{
+		Type: artistType,
+		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+			if album, ok := p.Source.(domain.Album); ok == true && album.ArtistId != 0 {
+				return interactor.Library.ArtistRepository.Get(album.ArtistId)
+			}
+
+			return nil, nil
+		},
+	})
+
+	trackType.AddFieldConfig("artist", &graphql.Field{
+		Type: artistType,
+		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+			if track, ok := p.Source.(domain.Track); ok == true && track.ArtistId != 0 {
+				return interactor.Library.ArtistRepository.Get(track.ArtistId)
+			}
+
+			return nil, nil
+		},
+	})
+	trackType.AddFieldConfig("album", &graphql.Field{
+		Type: artistType,
+		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+			if track, ok := p.Source.(domain.Track); ok == true && track.AlbumId != 0 {
+				return interactor.Library.AlbumRepository.Get(track.AlbumId)
+			}
+
+			return nil, nil
+		},
+	})
+	trackType.AddFieldConfig("cover", &graphql.Field{
+		Name: "Track cover",
+		Description: "Localisation of the cover file on the computer.",
+		Type: graphql.String,
+		Resolve: func (p graphql.ResolveParams) (interface{}, error) {
+			if track, ok := p.Source.(domain.Track); ok == true && track.CoverId != 0 {
+					cover, err := interactor.Library.CoverRepository.Get(track.CoverId)
+					if err == nil {
+						return cover.Path, nil
+					}
+			}
+
+			return nil, nil
+		},
+	})
+
+	// This is the type that will be the root of our query,
+	// and the entry point into our schema.
 	queryType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Query",
 		Fields: graphql.Fields{

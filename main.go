@@ -44,7 +44,9 @@ func main() {
 	libraryInteractor.ArtistRepository = interfaces.ArtistDbRepository{AppContext: &appContext}
 	libraryInteractor.AlbumRepository = interfaces.AlbumDbRepository{AppContext: &appContext}
 	libraryInteractor.TrackRepository = interfaces.TrackDbRepository{AppContext: &appContext}
+	libraryInteractor.CoverRepository = interfaces.CoverDbRepository{AppContext: &appContext}
 	libraryInteractor.LibraryRepository = interfaces.LibraryDbRepository{AppContext: &appContext}
+	libraryInteractor.MediaFileRepository = interfaces.LocalFilesystemRepository{}
 
 	// Instanciate the main Queue.
 	nowPlaying := new(business.Queue)

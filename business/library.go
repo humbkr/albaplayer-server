@@ -2,28 +2,34 @@ package business
 
 import (
 	"git.humbkr.com/jgalletta/alba-player/domain"
-	"github.com/dhowden/tag"
-	"path"
-	"path/filepath"
-	"math"
-	"os"
-	"fmt"
-	"strconv"
-	mp3info "github.com/xhenner/mp3-go"
 	"github.com/spf13/viper"
 	"errors"
 )
+
+const CoverPreferredSourceImgFile = "file"
+const CoverPreferredSourceMeta = "tag"
 
 type LibraryRepository interface {
 	Erase()
 }
 
+// Interface describing the storage mecanism for media.
+type MediaFileRepository interface {
+	// TODO Not abstract enough yet, we should not need a path but a reader or something.
+	ScanMediaFiles(path string, interactor LibraryInteractor)
+	MediaFileExists(filepath string) bool
+	WriteCoverFile(file *domain.Cover, directory string) error
+	RemoveCoverFile(file *domain.Cover, directory string) error
+}
+
 type LibraryInteractor struct {
 	ArtistRepository  domain.ArtistRepository
-	AlbumRepository   domain.AlbumRepository
-	TrackRepository   domain.TrackRepository
+	AlbumRepository domain.AlbumRepository
+	TrackRepository domain.TrackRepository
+	CoverRepository domain.CoverRepository
 	// TODO Check if the library repo should be an interface here.
 	LibraryRepository LibraryRepository
+	MediaFileRepository MediaFileRepository
 }
 
 // Gets an artist from its id.
@@ -206,10 +212,54 @@ func (interactor LibraryInteractor) TrackExists(trackId int) bool {
 	return interactor.TrackRepository.Exists(trackId)
 }
 
-func (interactor LibraryInteractor) UpdateLibrary() {
-	interactor.scanFolder(viper.GetString("Library.Folder"))
+// Saves a cover.
+func (interactor LibraryInteractor) SaveCover(cover *domain.Cover) error {
+	coverId := interactor.CoverHashExists(cover.Hash)
+	if coverId != 0 {
+		// It becomes an update.
+		cover.Id = coverId
+	}
+
+	// Save cover info to database.
+	err := interactor.CoverRepository.Save(cover)
+	if err == nil && coverId != 0 {
+		// Save image file.
+		err = interactor.MediaFileRepository.WriteCoverFile(cover, viper.GetString("Covers.Directory"))
+	}
+
+	return err
 }
 
+// Deletes a cover.
+func (interactor LibraryInteractor) DeleteCover(cover *domain.Cover) error {
+	// Save cover info to database.
+	err := interactor.CoverRepository.Delete(cover)
+	if err == nil {
+		// Save image file.
+		err = interactor.MediaFileRepository.RemoveCoverFile(cover, viper.GetString("Covers.Directory"))
+	}
+
+	return err
+}
+
+// Checks if a cover exists or not.
+func (interactor LibraryInteractor) CoverExists(coverId int) bool {
+	return interactor.CoverRepository.Exists(coverId)
+}
+
+// Checks if a cover exists or not by hash.
+//
+// Returns cover.Id if exists, else 0.
+func (interactor LibraryInteractor) CoverHashExists(hash string) int {
+	return interactor.CoverRepository.ExistsByHash(hash)
+}
+
+// TODO How to unit test this?
+func (interactor LibraryInteractor) UpdateLibrary() {
+	interactor.MediaFileRepository.ScanMediaFiles(viper.GetString("Library.Folder"), interactor)
+}
+
+// TODO How to unit test this?
 func (interactor LibraryInteractor) EraseLibrary() {
 	interactor.LibraryRepository.Erase()
 }
@@ -226,7 +276,7 @@ func (interactor LibraryInteractor) CleanDeadFiles() {
 	if err == nil {
 		// Delete non existant tracks.
 		for _, track := range tracks {
-			if _, err := os.Stat(track.Path); os.IsNotExist(err) {
+			if !interactor.MediaFileRepository.MediaFileExists(track.Path) {
 				interactor.DeleteTrack(&track)
 				relatedAlbums[track.AlbumId]++
 				relatedArtists[track.ArtistId]++
@@ -249,153 +299,4 @@ func (interactor LibraryInteractor) CleanDeadFiles() {
 			}
 		}
 	}
-}
-
-/**
-Stores media metadata retrieved from different sources.
- */
-type mediaMetadata struct{
-	Format string
-	Title string
-	Album string
-	Artist string
-	Genre string
-	Year string
-	Track int
-	Disc string // Format: <number>/<total>
-
-	Duration int
-}
-
-/**
-Recursively browses a directory and import / update all the audio files in the database.
-
-TODO: Use checksum from tag.Sum() to search for existing track for an artist + album.
-*/
-func (interactor LibraryInteractor) scanFolder(filePath string) {
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		return
-	}
-
-	filepath.Walk(filePath, func(filePath string, fileInfo os.FileInfo, err error) error {
-		if matched, _ := filepath.Match("*.mp3", fileInfo.Name()); matched {
-			metadata, err := getMetadataFromFile(filePath)
-
-			if err == nil {
-				var artistId int
-				var albumId int
-
-				// Process artist if any.
-				if metadata.Artist != "" {
-					// See if the artist exists.
-					artist, err := interactor.ArtistRepository.GetByName(metadata.Artist)
-					if err != nil {
-						artist = domain.Artist{}
-					}
-
-					artist.Name = metadata.Artist
-
-					errInsert := interactor.SaveArtist(&artist)
-					if errInsert != nil {
-						fmt.Println(errInsert)
-					}
-
-					artistId = artist.Id
-				}
-
-				// Process album if any.
-				if metadata.Album != "" {
-					// See if the album exists.
-					album, err := interactor.AlbumRepository.GetByName(metadata.Album, artistId)
-					if err != nil {
-						album = domain.Album{}
-					}
-
-					album.Title = metadata.Album
-					album.ArtistId = artistId
-					// TODO Track all the years from an album tracks and compute the final value.
-					album.Year = metadata.Year
-
-					errInsert := interactor.SaveAlbum(&album)
-					if errInsert != nil {
-						fmt.Println(errInsert)
-					}
-
-					albumId = album.Id
-				}
-
-				// Process the track (there is always a track).
-				// See if the track exists.
-				track, err := interactor.TrackRepository.GetByName(metadata.Title, artistId, albumId)
-
-				if err != nil {
-					track = domain.Track{}
-				}
-
-				track.Title = metadata.Title
-				track.ArtistId = artistId
-				track.AlbumId = albumId
-				track.Number = metadata.Track
-				track.Disc = metadata.Disc
-				track.Genre = metadata.Genre
-				track.Duration = metadata.Duration
-				track.Path = filePath
-
-				errInsert := interactor.SaveTrack(&track)
-				if errInsert != nil {
-					fmt.Println(errInsert)
-				}
-			}
-		}
-
-		return nil
-	})
-}
-
-/**
-Get media matadata from a file.
-
-Uses multiple libraries to get a maximum of info depending on the format.
- */
-func getMetadataFromFile(filePath string) (info mediaMetadata, err error) {
-	file, err := os.OpenFile(filePath, os.O_RDONLY, 0666)
-	defer file.Close()
-
-	if err != nil {
-		return
-	}
-	tags, err := tag.ReadFrom(file)
-	if err != nil {
-		return
-	}
-
-	// Get all we can from the common tags.
-	info.Title = tags.Title()
-	info.Album = tags.Album()
-	info.Artist = tags.Artist()
-	info.Genre = tags.Genre()
-	info.Track, _ = tags.Track()
-
-	number, total := tags.Disc()
-	// Don't store disc info if there's only one disc.
-	if total > 1 {
-		info.Disc = strconv.Itoa(number) + "/" + strconv.Itoa(total)
-	}
-
-	// If the track has no title, fallback to the filename.
-	if  info.Title == "" {
-		_, f := path.Split(filePath)
-		var extension = filepath.Ext(f)
-		info.Title = f[0 : len(f)-len(extension)]
-	}
-
-	// If the file is an mp3, get some more info.
-	if tags.FileType() == tag.MP3 {
-		mp3Info, err := mp3info.Examine(filePath, false)
-		if err == nil {
-			info.Duration = int(math.Floor(mp3Info.Length + .5))
-		}
-	}
-
-	return
 }

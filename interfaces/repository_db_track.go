@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"git.humbkr.com/jgalletta/alba-player/domain"
-	"github.com/stretchr/objx"
 )
 
 type TrackDbRepository struct {
@@ -17,7 +16,9 @@ Fetches a track from the database.
 func (tr TrackDbRepository) Get(id int) (entity domain.Track, err error) {
 	object, err := tr.AppContext.DB.Get(domain.Track{}, id)
 	if err == nil && object != nil {
-		entity = object.(domain.Track)
+		entity = *object.(*domain.Track)
+	} else {
+		err = errors.New("no track found")
 	}
 
 	return
@@ -80,8 +81,8 @@ func (tr TrackDbRepository) Save(entity *domain.Track) (err error) {
 
 // Check if a track exists for a given id.
 func (tr TrackDbRepository) Exists(id int) bool {
-	entity, err := tr.AppContext.DB.Get(domain.Track{}, id)
-	return err == nil && entity != nil
+	_, err := tr.Get(id)
+	return err == nil
 }
 
 /**

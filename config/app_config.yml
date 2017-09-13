@@ -3,10 +3,12 @@
 # General info.
 APPName: Alba Player
 
-# Database connection.
+# Database.
 DB:
     Driver: sqlite3
     File: ./alba.db
+Covers:
+    Directory: ./covers
 
 # Logging system.
 Log:
@@ -20,3 +22,5 @@ Server:
 # Library configuration.
 Library:
     Folder: C:\Users\humbk\Music\alba-player\media
+    # Preferred source for media cover image ("tag" or "file")
+    CoverPreferredSource: tag

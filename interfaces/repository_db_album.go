@@ -15,8 +15,10 @@ Fetches an album from the database.
 func (ar AlbumDbRepository) Get(id int) (entity domain.Album, err error) {
 	object, err := ar.AppContext.DB.Get(domain.Album{}, id)
 	if err == nil && object != nil {
-		entity = object.(domain.Album)
+		entity = *object.(*domain.Album)
 		ar.populateTracks(&entity)
+	} else {
+		err = errors.New("no album found")
 	}
 
 	return
@@ -108,8 +110,8 @@ func (ar AlbumDbRepository) Delete(entity *domain.Album) (err error) {
 
 // Check if an album exists for a given id.
 func (ar AlbumDbRepository) Exists(id int) bool {
-	entity, err := ar.AppContext.DB.Get(domain.Album{}, id)
-	return err == nil && entity != nil
+	_, err := ar.Get(id)
+	return err == nil
 }
 
 /**
