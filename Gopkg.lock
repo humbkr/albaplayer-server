@@ -11,7 +11,7 @@
   branch = "master"
   name = "github.com/dhowden/tag"
   packages = ["."]
-  revision = "b45cd4d440f5aa7b2a5ee69dee88c16da260eb07"
+  revision = "e24fc33f60efdb62f5894e1ae0224b03ceb32786"
 
 [[projects]]
   name = "github.com/fsnotify/fsnotify"
@@ -166,6 +166,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2ec9da4f2d59cadcc02f87b15712b1d9a40c46a4ed1a9fca5c0ce09bd51a8b4e"
+  inputs-digest = "98dd8ccc3d0fa02d672655c5a88dbe6e5d284712b2324142d4afe562c81883ac"
   solver-name = "gps-cdcl"
   solver-version = 1

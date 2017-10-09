@@ -16,7 +16,7 @@ type LibraryRepository interface {
 // Interface describing the storage mecanism for media.
 type MediaFileRepository interface {
 	// TODO Not abstract enough yet, we should not need a path but a reader or something.
-	ScanMediaFiles(path string, interactor LibraryInteractor)
+	ScanMediaFiles(path string, interactor *LibraryInteractor) (int, int)
 	MediaFileExists(filepath string) bool
 	WriteCoverFile(file *domain.Cover, directory string) error
 	RemoveCoverFile(file *domain.Cover, directory string) error
@@ -256,7 +256,7 @@ func (interactor LibraryInteractor) CoverHashExists(hash string) int {
 
 // TODO How to unit test this?
 func (interactor LibraryInteractor) UpdateLibrary() {
-	interactor.MediaFileRepository.ScanMediaFiles(viper.GetString("Library.Folder"), interactor)
+	interactor.MediaFileRepository.ScanMediaFiles(viper.GetString("Library.Folder"), &interactor)
 }
 
 // TODO How to unit test this?

@@ -23,14 +23,14 @@ Common stuff for repositories tests.
  */
 
 const TestDataDir = "../test_data/"
-const TestDatasourceFile = TestDataDir + "test.db"
+const TestDatasourceFile = "test.db"
 const TestArtistsFile = TestDataDir + "artists.csv"
 const TestAlbumsFile = TestDataDir + "albums.csv"
 const TestTracksFile = TestDataDir + "tracks.csv"
 const TestCoversFile = TestDataDir + "covers.csv"
 const TestFSLibDir = TestDataDir + "mp3"
 
-// Initialise the application test datasource.
+// Initialises the application test datasource.
 func createTestDatasource() (ds Datasource, err error) {
 	// Create database file.
 	connection, err := sql.Open("sqlite3", os.TempDir() + string(os.PathSeparator) + TestDatasourceFile)
@@ -356,7 +356,7 @@ type mediaRepositoryMock struct{
 }
 
 // Not needed.
-func (m *mediaRepositoryMock) ScanMediaFiles(path string, interactor business.LibraryInteractor) {return}
+func (m *mediaRepositoryMock) ScanMediaFiles(path string, interactor *business.LibraryInteractor) (int, int) {return 0, 0}
 func (m *mediaRepositoryMock) MediaFileExists(filepath string) bool {return true}
 func (m *mediaRepositoryMock) WriteCoverFile(file *domain.Cover, directory string) error {return nil}
 func (m *mediaRepositoryMock) RemoveCoverFile(file *domain.Cover, directory string) error {return nil}

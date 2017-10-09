@@ -71,7 +71,7 @@ func (r LocalFilesystemRepository) ScanMediaFiles(path string, interactor *busin
 					log.Println(err)
 				}
 
-				_, err = processTrack(interactor, &metadata, artistId, albumId)
+				_, err := processTrack(interactor, &metadata, artistId, albumId)
 				if err != nil {
 					// TODO devise a decent logging system.
 					log.Println(err)
@@ -210,26 +210,17 @@ func getMetadataFromFile(filePath string) (info mediaMetadata, err error) {
 		return
 	}
 
-	tags, err := tag.ReadFrom(file)
-	if err == nil {
+	tags, errTags := tag.ReadFrom(file)
+	if errTags == nil {
 		// Get all we can from the common tags.
 		info.Format = string(tags.FileType())
 		info.Title = tags.Title()
 		info.Album = tags.Album()
 		info.Artist = tags.Artist()
 		info.Genre = tags.Genre()
-
+		info.Year = strconv.Itoa(tags.Year())
 		info.Track, _ = tags.Track()
 		info.Picture = tags.Picture()
-
-		// TODO There's a problem with year(): https://github.com/dhowden/tag/issues/27.
-		if tags.Year() == 0 {
-			// Try to get the year from the frame directly.
-			frames := tags.Raw()
-			if val, ok := frames["TDRC"]; ok {
-				info.Year = val.(string)
-			}
-		}
 
 		number, total := tags.Disc()
 		// Don't store disc info if there's only one disc.

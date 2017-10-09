@@ -192,6 +192,67 @@ var trackType = graphql.NewObject(graphql.ObjectConfig{
 	},
 })
 
+var queueType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "Queue",
+	Fields: graphql.Fields{
+		// TODO see if we can create an "options" field including repeat + random.
+		"repeat": &graphql.Field{
+			Name: "Queue option repeat",
+			Description: "Queue playing option: repeat.",
+			Type: graphql.String,
+			Resolve: func (p graphql.ResolveParams) (interface{}, error) {
+				// TODO change this for multi users.
+				queue := business.GetQueueInstance()
+				value := "no"
+				switch queue.Options.Repeat {
+				case business.QueueOptionRepeatSingle:
+					value = "all"
+				case business.QueueOptionRepeatAll:
+					value = "track"
+				}
+
+				return value, nil
+			},
+		},
+		// TODO see if we can create an "options" field including repeat + random.
+		"random": &graphql.Field{
+			Name: "Queue option random",
+			Description: "Queue playing option: random.",
+			Type: graphql.Boolean,
+			Resolve: func (p graphql.ResolveParams) (interface{}, error) {
+				// TODO change this for multi users.
+				queue := business.GetQueueInstance()
+				return queue.Options.Random, nil
+			},
+		},
+		"current": &graphql.Field{
+			Name: "Current track",
+			Description: "The current track playing.",
+			Type: graphql.NewNonNull(trackType),
+			Resolve: func (p graphql.ResolveParams) (interface{}, error) {
+				// TODO change this for multi users.
+				queue := business.GetQueueInstance()
+				return queue.Current()
+			},
+		},
+		"tracks": &graphql.Field{
+			Name: "Tracklist",
+			Description: "Tracks in the queue.",
+			Type: graphql.NewList(graphql.NewNonNull(trackType)),
+			Resolve: func (p graphql.ResolveParams) (interface{}, error) {
+				// TODO change this for multi users.
+				queue := business.GetQueueInstance()
+				tracks := domain.Tracks{}
+				for _, trackId := range queue.PlayingOrder {
+					tracks = append(tracks, queue.Tracklist[trackId])
+				}
+
+				return tracks, nil
+			},
+		},
+	},
+})
+
 /**
 Creates a new GraphQL interactor.
 
@@ -325,6 +386,175 @@ func NewGraphQLInteractor(ci *business.LibraryInteractor) *graphQLInteractor {
 					return interactor.Library.TrackRepository.Get(id)
 				},
 			},
+			"queue": &graphql.Field{
+				Type: queueType,
+				Resolve: func (p graphql.ResolveParams) (interface{}, error) {
+					// TODO change this for multi users.
+					return business.GetQueueInstance(), nil
+				},
+			},
+		},
+	})
+
+	// Queue operations.
+	queueMutation := graphql.NewObject(graphql.ObjectConfig{
+		Name: "QueueMutation",
+		Fields: graphql.Fields{
+			"next": &graphql.Field{
+				Type: queueType,
+				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+					queue := business.GetQueueInstance()
+					queue.Next()
+					return queue, nil
+				},
+			},
+			"previous": &graphql.Field{
+				Type: queueType,
+				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+					queue := business.GetQueueInstance()
+					queue.Previous()
+					return queue, nil
+				},
+			},
+			"appendArtist": &graphql.Field{
+				Type: queueType,
+				Args: graphql.FieldConfigArgument{
+					"id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.Int),
+					},
+				},
+				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+					queue := business.GetQueueInstance()
+					artistId, ok := params.Args["id"].(int)
+					if ok {
+						queue.AppendArtist(artistId)
+					}
+
+					return queue, nil
+				},
+			},
+			"appendAlbum": &graphql.Field{
+				Type: queueType,
+				Args: graphql.FieldConfigArgument{
+					"id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.Int),
+					},
+				},
+				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+					queue := business.GetQueueInstance()
+					albumId, ok := params.Args["id"].(int)
+					if ok {
+						queue.AppendAlbum(albumId)
+					}
+
+					return queue, nil
+				},
+			},
+			"appendTrack": &graphql.Field{
+				Type: queueType,
+				Args: graphql.FieldConfigArgument{
+					"id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.Int),
+					},
+				},
+				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+					queue := business.GetQueueInstance()
+					trackId, ok := params.Args["id"].(int)
+					if ok {
+						queue.AppendTrack(trackId)
+					}
+
+					return queue, nil
+				},
+			},
+			"playArtist": &graphql.Field{
+				Type: queueType,
+				Args: graphql.FieldConfigArgument{
+					"id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.Int),
+					},
+				},
+				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+					queue := business.GetQueueInstance()
+					artistId, ok := params.Args["id"].(int)
+					if ok {
+						queue.PlayArtist(artistId)
+					}
+
+					return queue, nil
+				},
+			},
+			"playAlbum": &graphql.Field{
+				Type: queueType,
+				Args: graphql.FieldConfigArgument{
+					"id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.Int),
+					},
+				},
+				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+					queue := business.GetQueueInstance()
+					albumId, ok := params.Args["id"].(int)
+					if ok {
+						queue.PlayAlbum(albumId)
+					}
+
+					return queue, nil
+				},
+			},
+			"playTrack": &graphql.Field{
+				Type: queueType,
+				Args: graphql.FieldConfigArgument{
+					"id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.Int),
+					},
+				},
+				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+					queue := business.GetQueueInstance()
+					trackId, ok := params.Args["id"].(int)
+					if ok {
+						queue.PlayTrack(trackId)
+					}
+
+					return queue, nil
+				},
+			},
+			"clear": &graphql.Field{
+				Type: queueType,
+				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+					queue := business.GetQueueInstance()
+					queue.Clear()
+					return queue, nil
+				},
+			},
+			"setOptions": &graphql.Field{
+				Type: queueType,
+				Args: graphql.FieldConfigArgument{
+					"repeat": &graphql.ArgumentConfig{
+						Type: graphql.String,
+					},
+					"random": &graphql.ArgumentConfig{
+						Type: graphql.Boolean,
+					},
+				},
+				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+					queue := business.GetQueueInstance()
+					repeat, ok := params.Args["repeat"].(string)
+					if ok {
+						switch repeat {
+						case "track":
+							queue.Options.Repeat = business.QueueOptionRepeatSingle
+						case "all":
+							queue.Options.Repeat = business.QueueOptionRepeatAll
+						}
+					}
+					random, ok := params.Args["random"].(bool)
+					if ok {
+						queue.Options.Random = random
+					}
+
+					return queue, nil
+				},
+			},
 		},
 	})
 
@@ -335,6 +565,7 @@ func NewGraphQLInteractor(ci *business.LibraryInteractor) *graphQLInteractor {
 	var err error
 	interactor.Schema, err = graphql.NewSchema(graphql.SchemaConfig{
 		Query: queryType,
+		Mutation: queueMutation,
 	})
 	if err != nil {
 		panic(err)

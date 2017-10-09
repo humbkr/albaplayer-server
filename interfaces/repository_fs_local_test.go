@@ -154,7 +154,7 @@ func (suite *LocalFSRepoTestSuite) TestProcessTrack() {
 }
 
 // Test the preferred source selection only.
-func (suite *LocalFSRepoTestSuite) aTestGetMediaCoverFile() {
+func (suite *LocalFSRepoTestSuite) TestGetMediaCoverFile() {
 	// Test to get the cover from an image file when a cover tag is present.
 	track := domain.Track{Path: TestFSLibDir + "/no artist - album 1 - Track 1.mp3"}
 	cover, source, err := getMediaCoverFile(track, business.CoverPreferredSourceImgFile)
@@ -258,6 +258,7 @@ func (suite *LocalFSRepoTestSuite) TestGetMetadataFromFile() {
 	// Test without any tag.
 	track = domain.Track{Path: TestFSLibDir + "/no artist - no album - no title.mp3"}
 	meta, err = getMetadataFromFile(track.Path)
+	assert.Nil(suite.T(), err)
 	// Should set the file name as a title.
 	assert.Equal(suite.T(), "no artist - no album - no title", meta.Title)
 	assert.Empty(suite.T(), meta.Album)

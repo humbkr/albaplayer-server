@@ -48,19 +48,30 @@ func main() {
 	libraryInteractor.LibraryRepository = interfaces.LibraryDbRepository{AppContext: &appContext}
 	libraryInteractor.MediaFileRepository = interfaces.LocalFilesystemRepository{}
 
-	// Instanciate the main Queue.
-	nowPlaying := new(business.Queue)
-	nowPlaying.Library = libraryInteractor
-
 	// STUB: instanciate the database for tests.
-	libraryInteractor.EraseLibrary()
-	libraryInteractor.UpdateLibrary()
+	// libraryInteractor.EraseLibrary()
+	// libraryInteractor.UpdateLibrary()
+
+	// Instanciate the main Queue.
+	// TODO warning, only works for one user.
+	queue := business.GetQueueInstance()
+	queue.Library = libraryInteractor
+
+
+	queue.AppendAlbum(1)
+
+	fmt.Println(queue.PlayingOrder)
+
+
+
+
+
 
 	// Initialize GraphQL stuff.
 	graphQLInteractor := interfaces.NewGraphQLInteractor(libraryInteractor)
 
 	// Create a graphl-go HTTP handler with our previously defined schema
-	// and we also set it to return pretty JSON output.
+	// and set it to return pretty JSON output.
 	apiHandler := gqlHandler.New(&gqlHandler.Config{
 		Schema: &graphQLInteractor.Schema,
 		Pretty: true,
@@ -73,6 +84,6 @@ func main() {
 	http.HandleFunc("/", graphiql.ServeGraphiQL)
 
 	// Launch the server.
-	http.ListenAndServe(":" + viper.GetString("Server.Port"), nil)
 	fmt.Printf("Server is up: http://localhost:%s/graphql", viper.GetString("Server.Port"))
+	http.ListenAndServe(":" + viper.GetString("Server.Port"), nil)
 }
