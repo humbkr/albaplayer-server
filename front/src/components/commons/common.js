@@ -1,16 +1,40 @@
 import React, { Component } from 'react';
-import { findDOMNode } from 'react-dom';
 import PropTypes from 'prop-types';
-import styled, { css } from 'styled-components';
+import styled from 'styled-components';
+
+const Title = styled.h1`
+  display: inline-block;
+  vertical-align: top;
+  font-size: 1.2em;
+  font-weight: normal;
+`;
+
+const Header = styled.header`
+  display: inline-block;
+  width: 100%;
+  height: ${props => props.theme.itemHeight};
+  
+  > * {
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  
+  > ${Title} {
+    margin-left: 7px;
+  }
+`;
 
 const IconButton = styled.button`
   display: inline-block;
   vertical-align: top;
-  width: 50px;
-  height: 50px;
+  width: ${props => props.theme.itemHeight};
+  height: ${props => props.theme.itemHeight};
   border: none;
   background-color: transparent;
   padding: 8px;
+  
+  color: ${props => props.theme.textPrimaryColor};
   
   :hover {
     cursor: pointer;
@@ -39,7 +63,7 @@ const Icon = styled.i`
   -moz-osx-font-smoothing: grayscale;
 
   /* Support for IE. */
-  font-feature-settings: 'liga';  
+  font-feature-settings: 'liga';
 `;
 
 const Select = styled.select`
@@ -60,7 +84,7 @@ const SelectWrapper = styled.div`
   flex: 1;
   vertical-align: top;
   width: 100%;
-  height: 50px;
+  height: ${props => props.theme.itemHeight};
   
   > label {
     display: inline-block;
@@ -106,4 +130,6 @@ export {
   Icon,
   IconButton,
   SelectContainer,
+  Title,
+  Header,
 };

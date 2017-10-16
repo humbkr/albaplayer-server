@@ -1,107 +1,13 @@
 schema {
   query: Query
-  mutation: QueueMutation
-}
-
-type Album {
-  artist: Artist
-
-  # Album unique identifier.
-  id: ID!
-
-  # Title of the album.
-  title: String!
-
-  # Tracks of album.
-  tracks: [Track!]
-
-  # Year the album was released in, or the year-span in case of a compilation of tracks from released in different years.
-  year: String!
-}
-
-type Artist {
-  # Albums of the artist.
-  albums: [Album!]
-
-  # Artist unique Identifier.
-  id: ID!
-
-  # Name of the artist.
-  name: String!
 }
 
 type Query {
-  album(
-    # Album ID
-    id: ID!
-  ): Album
-  albums: [Album]
-  artist(
-    # Artist ID
-    id: ID!
-  ): Artist
+  artist(id: ID!): Artist
   artists: [Artist]
-  queue: Queue
-  track(
-    # Track ID
-    id: ID!
-  ): Track
-  tracks: [Track]
 }
 
-type Queue {
-  # The current track playing.
-  current: Track!
-
-  # Queue playing option: random.
-  random: Boolean
-
-  # Queue playing option: repeat.
-  repeat: String
-
-  # Tracks in the queue.
-  tracks: [Track!]
-}
-
-type QueueMutation {
-  appendAlbum(id: Int!): Queue
-  appendArtist(id: Int!): Queue
-  appendTrack(id: Int!): Queue
-  clear: Queue
-  next: Queue
-  playAlbum(id: Int!): Queue
-  playArtist(id: Int!): Queue
-  playTrack(id: Int!): Queue
-  previous: Queue
-  setOptions(repeat: String, random: Boolean): Queue
-}
-
-type Track {
-  album: Artist
-  artist: Artist
-
-  # Localisation of the cover file on the computer.
-  cover: String
-
-  # If the album this track is on has multiple discs, specify the disc on which the track is on.
-  disc: String
-
-  # Track duration in seconds.
-  duration: Int
-
-  # Music genre.
-  genre: String
-
-  # Track unique Identifier.
+type Artist {
   id: ID!
-
-  # Position of the track on the album or disc.
-  number: Int
-
-  # Localisation of the media file on the computer.
-  path: String!
-
-  # Title of the track.
-  title: String!
+  name: String!
 }
-

@@ -7,7 +7,7 @@ import {IconButton, Icon} from "./common";
 
 const DrawerMenuWrapper = styled.div`
   display: flex;
-  height: 50px;
+  height: ${props => props.theme.itemHeight};
 `;
 
 const DrawerMenuDecorated = styled.div`
@@ -23,13 +23,13 @@ const DrawerMenuDecorated = styled.div`
 const DrawerMenu = styled.div`
   position: absolute;
   right: 0;
-  width: 50px;
+  width: ${props => props.theme.itemHeight};
   
   ${props => props.open && css`
     display: flex;
     justify-content: flex-end;
     width: ${props => props.maxWidth ? props.maxWidth : '100%'};
-    background-color: #cccccc;
+    background-color: ${props => props.theme.highlight};
   `}
 `;
 
@@ -57,6 +57,8 @@ class DrawerMenuDecorator extends Component {
     if (this.state.open && this.props.onClose) {
       // We are closing the menu.
       this.props.onClose(event);
+    } else if (!this.state.open && this.props.onOpen) {
+      this.props.onOpen(event);
     }
 
     this.setState({
@@ -101,6 +103,7 @@ DrawerMenuDecorator.propTypes = {
   content: PropTypes.element.isRequired,
   widthOpen: PropTypes.string,
   persistant: PropTypes.bool,
+  onOpen: PropTypes.func,
   onClose: PropTypes.func,
 };
 

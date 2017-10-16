@@ -1,28 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import styled from 'styled-components';
-
-const LibraryListItem = styled.li`
-  width: 100%;
-  height: 50px;
-  border-bottom: 1px solid #cccccc;
-  padding-left: 15px;
-  
-  :hover {
-    background-color: #cccccc;
-  }
-  
-  > * {
-    position: relative;
-    top: 50%;
-    transform: translateY(-50%);
-  }
-`;
-
-const LibraryList = styled.ul`
-  list-style-type: none;
-  border-top: 1px solid #cccccc;
-`;
+import { List, ListItem } from '../commons/list';
 
 class LibraryListContainer extends Component {
   render() {
@@ -43,15 +21,15 @@ class LibraryListContainer extends Component {
         // Return a list item using the required specific display.
         const Display = this.props.itemDisplay;
         return (
-          <LibraryListItem key={item.id}>
+          <ListItem key={item.id} border>
             <Display item={item} />
-          </LibraryListItem>
+          </ListItem>
         );
       }
     });
 
     return (
-      <LibraryList>{itemsList}</LibraryList>
+      <List border>{itemsList}</List>
     );
   }
 }
@@ -59,7 +37,7 @@ LibraryListContainer.propTypes = {
   orderBy: PropTypes.string,
   searchFilter: PropTypes.string,
   items: PropTypes.array.isRequired,
-  itemDisplay: PropTypes.Element,
+  itemDisplay: PropTypes.func,
 };
 
 export default LibraryListContainer;

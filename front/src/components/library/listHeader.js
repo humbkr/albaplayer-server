@@ -6,7 +6,7 @@ import { SelectContainer } from '../commons/common';
 import DrawerMenuDecorator from '../commons/drawer';
 
 const LibraryListSearch = styled.div`
-  height: 50px;
+  height: ${props => props.theme.itemHeight};
   padding: 8px;
 
   > input {
@@ -19,20 +19,31 @@ const LibraryListSearch = styled.div`
 
 const LibraryListHeader = styled.header`
   width: 100%;
-  height: 50px;
+  height: ${props => props.theme.itemHeight};
   padding-left: 15px;
 `;
 
 class LibraryListHeaderContainer extends Component {
+  constructor(props) {
+    super(props);
+
+    this.focusInput = this.focusInput.bind(this);
+  }
+
+  focusInput() {
+    this.drawerContent.refs
+  }
+
   render() {
     const orderBy = this.props.orderBy;
     const searchValue = this.props.searchValue;
     const options = this.props.orderOptions;
 
-    const drawerContent = (
+    this.drawerContent = (
       <LibraryListSearch>
         <input
           onChange={this.props.handleChangeSearch}
+          ref="searchInput"
           value={searchValue}
           type="text"
           placeholder="Search..."
@@ -44,7 +55,8 @@ class LibraryListHeaderContainer extends Component {
       <LibraryListHeader>
         <DrawerMenuDecorator
           icon="search"
-          content={drawerContent}
+          content={this.drawerContent}
+          onOpen={this.focusInput}
           onClose={this.props.handleCloseSearch}
           persistant
         >

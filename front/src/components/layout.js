@@ -1,45 +1,23 @@
 import React, { Component } from 'react';
-import styled from 'styled-components';
 import PropTypes from 'prop-types';
 
-import { Icon, IconButton } from './commons/common';
-import ArtistListView from "./artistListView";
-
-const Title = styled.h1`
-  display: inline-block;
-  vertical-align: top;
-  font-size: 1.2em;
-  font-weight: normal;
-`;
-
-const PageHeader = styled.header`
-  display: inline-block;
-  width: 100%;
-  height: 50px;
-  
-  > * {
-    position: relative;
-    top: 50%;
-    transform: translateY(-50%);
-  }
-  
-  > ${Title} {
-    margin-left: 7px;
-  }
-`;
+import { Icon, IconButton, Title, Header } from './commons/common';
+import MainMenuContainer from './menu';
+import ArtistListView from "./ArtistListView";
 
 class AppPageHeader extends Component {
   render() {
     return (
-      <PageHeader>
-        <IconButton><Icon>menu</Icon></IconButton>
+      <Header>
+        <IconButton onClick={this.props.menuButtonAction}><Icon>menu</Icon></IconButton>
         <Title>{this.props.title}</Title>
-      </PageHeader>
+      </Header>
     );
   }
 }
 AppPageHeader.propTypes = {
   title: PropTypes.string,
+  menuButtonAction: PropTypes.func.isRequired,
 };
 
 class AppPageContent extends Component {
@@ -53,10 +31,26 @@ class AppPageContent extends Component {
 }
 
 class AppPage extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      mainMenuIsOpen: false,
+    };
+
+    this.handleToggleMainMenu = this.handleToggleMainMenu.bind(this);
+  }
+
+  handleToggleMainMenu() {
+    this.setState({
+      mainMenuIsOpen: !this.state.mainMenuIsOpen,
+    });
+  }
+
   render() {
     return (
       <div>
-        <AppPageHeader title={this.props.title} />
+        <MainMenuContainer isOpen={this.state.mainMenuIsOpen} closeButtonHandler={this.handleToggleMainMenu}/>
+        <AppPageHeader title={this.props.title} menuButtonAction={this.handleToggleMainMenu} />
         <AppPageContent>
           <ArtistListView />
         </AppPageContent>

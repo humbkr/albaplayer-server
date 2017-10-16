@@ -60,9 +60,9 @@ class LibraryListView extends Component {
 }
 LibraryListView.propTypes = {
   items: PropTypes.array.isRequired,
-  itemDisplay: PropTypes.Element,
+  itemDisplay: PropTypes.func,
   orderOptions: PropTypes.array.isRequired,
-  defultOrder: PropTypes.string,
+  defaultOrder: PropTypes.string,
 };
 
 export default LibraryListView;

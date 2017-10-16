@@ -60,10 +60,6 @@ func main() {
 
 	queue.AppendAlbum(1)
 
-	fmt.Println(queue.PlayingOrder)
-
-
-
 
 
 
