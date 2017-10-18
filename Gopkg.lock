@@ -39,12 +39,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/graphql-go/relay"
-  packages = ["."]
-  revision = "9054c3f9e4f31c403e404f1292d6d12874d1fdc5"
-
-[[projects]]
-  branch = "master"
   name = "github.com/hashicorp/hcl"
   packages = [".","hcl/ast","hcl/parser","hcl/scanner","hcl/strconv","hcl/token","json/parser","json/scanner","json/token"]
   revision = "392dba7d905ed5d04a5794ba89f558b27e2ba1ca"
@@ -96,6 +90,12 @@
   packages = ["difflib"]
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
+
+[[projects]]
+  name = "github.com/rs/cors"
+  packages = ["."]
+  revision = "7af7a1e09ba336d2ea14b1ce73bf693c6837dbf6"
+  version = "v1.2"
 
 [[projects]]
   branch = "master"
@@ -172,6 +172,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a5981dc89d31967329a02b3809580a0c9429ad2e9764b8c7eff71ed6772232f4"
+  inputs-digest = "6b0b922cea369f8bb8659a4587ee4605f564038b0b248428b2a1f92b376d24bf"
   solver-name = "gps-cdcl"
   solver-version = 1

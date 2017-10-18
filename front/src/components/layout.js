@@ -1,15 +1,17 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
 
 import { Icon, IconButton, Title, Header } from './commons/common';
-import MainMenuContainer from './menu';
-import ArtistListView from "./ArtistListView";
+import SidebarContainer from './sidebar';
+import ArtistListView from "./artistListView";
+import AlbumListView from "./albumListView";
+import HomeView from "./homeView";
 
 class AppPageHeader extends Component {
   render() {
     return (
       <Header>
-        <IconButton onClick={this.props.menuButtonAction}><Icon>menu</Icon></IconButton>
         <Title>{this.props.title}</Title>
       </Header>
     );
@@ -17,44 +19,19 @@ class AppPageHeader extends Component {
 }
 AppPageHeader.propTypes = {
   title: PropTypes.string,
-  menuButtonAction: PropTypes.func.isRequired,
 };
 
-class AppPageContent extends Component {
-  render() {
-    return (
-      <div className="appPageContent">
-        {this.props.children}
-      </div>
-    );
-  }
-}
-
 class AppPage extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      mainMenuIsOpen: false,
-    };
-
-    this.handleToggleMainMenu = this.handleToggleMainMenu.bind(this);
-  }
-
-  handleToggleMainMenu() {
-    this.setState({
-      mainMenuIsOpen: !this.state.mainMenuIsOpen,
-    });
-  }
-
   render() {
     return (
-      <div>
-        <MainMenuContainer isOpen={this.state.mainMenuIsOpen} closeButtonHandler={this.handleToggleMainMenu}/>
-        <AppPageHeader title={this.props.title} menuButtonAction={this.handleToggleMainMenu} />
-        <AppPageContent>
-          <ArtistListView />
-        </AppPageContent>
-      </div>
+      <Router>
+        <div>
+          <SidebarContainer />
+          <Route exact path="/" component={HomeView}/>
+          <Route path="/artists" component={ArtistListView}/>
+          <Route path="/albums" component={AlbumListView}/>
+        </div>
+      </Router>
     );
   }
 }
@@ -63,3 +40,7 @@ AppPage.propTypes = {
 };
 
 export default AppPage;
+
+export {
+  AppPageHeader,
+};

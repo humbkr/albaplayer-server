@@ -3,26 +3,23 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "babel-plugin-relay": "^1.4.1",
     "prop-types": "^15.6.0",
     "react": "^16.0.0",
+    "react-apollo": "^1.4.16",
     "react-dom": "^16.0.0",
-    "react-onclickoutside": "^6.6.0",
-    "react-relay": "^1.4.1",
     "react-router": "^4.2.0",
+    "react-router-dom": "^4.2.2",
     "react-scripts": "1.0.14",
-    "relay-runtime": "^1.4.1",
     "styled-components": "^2.2.1"
   },
   "scripts": {
-    "start": "node ./setup && react-scripts start",
-    "build": "node ./setup && react-scripts build",
-    "test": "node ./setup && react-scripts test --env=jsdom",
-    "eject": "react-scripts eject",
-    "relay": "relay-compiler --src ./src --schema ./src/schema.graphql"
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
   },
   "devDependencies": {
-    "babel-plugin-relay": "^1.4.1",
-    "get-graphql-schema": "^2.1.1",
-    "relay-compiler": "^1.4.1"
+    "get-graphql-schema": "^2.1.1"
   }
 }

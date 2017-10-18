@@ -11,6 +11,8 @@ import (
 	"net/http"
 	gqlHandler "github.com/graphql-go/handler"
 	"github.com/mnmtanish/go-graphiql"
+	"github.com/rs/cors"
+	"time"
 )
 
 func main() {
@@ -49,8 +51,13 @@ func main() {
 	libraryInteractor.MediaFileRepository = interfaces.LocalFilesystemRepository{}
 
 	// STUB: instanciate the database for tests.
-	// libraryInteractor.EraseLibrary()
-	// libraryInteractor.UpdateLibrary()
+	/*t := time.Now()
+	fmt.Println(t.Format("15:04:05"))
+	libraryInteractor.EraseLibrary()
+	libraryInteractor.UpdateLibrary()
+	t2 := time.Now()
+	fmt.Println(t2.Format("15:04:05"))
+	*/
 
 	// Instanciate the main Queue.
 	// TODO warning, only works for one user.
@@ -58,7 +65,7 @@ func main() {
 	queue.Library = libraryInteractor
 
 
-	queue.AppendAlbum(1)
+	//queue.AppendAlbum(1)
 
 
 
@@ -68,10 +75,13 @@ func main() {
 
 	// Create a graphl-go HTTP handler with our previously defined schema
 	// and set it to return pretty JSON output.
-	apiHandler := gqlHandler.New(&gqlHandler.Config{
+	graphQLHandler := gqlHandler.New(&gqlHandler.Config{
 		Schema: &graphQLInteractor.Schema,
 		Pretty: true,
 	})
+
+	// Make the server handle cross-domain requests.
+	apiHandler := cors.Default().Handler(graphQLHandler)
 
 	// Serve a GraphQL endpoint at `/graphql`.
 	http.Handle("/graphql", apiHandler)

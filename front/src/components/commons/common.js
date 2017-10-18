@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 
 const Title = styled.h1`
   display: inline-block;
@@ -126,10 +126,93 @@ SelectContainer.propTypes = {
   onChangeHandler: PropTypes.func.isRequired,
 };
 
+const rotate360CounterClockwise = keyframes`
+	from {
+		transform: rotate(360deg);
+	}
+
+	to {
+		transform: rotate(0deg);
+	}
+`;
+
+const LoadingStyled = styled.div`
+  width: 100%;
+  padding: 40px;
+  text-align: center;
+  color: ${props => props.theme.highlight};
+  
+  > i {
+    font-size: 45px;
+    animation: ${rotate360CounterClockwise} 2s linear infinite;
+  }
+  
+  > p {
+    margin-top: 10px;
+  }
+`;
+
+class Loading extends Component {
+  render() {
+    return (
+      <LoadingStyled>
+        <Icon>camera</Icon>
+      </LoadingStyled>
+    );
+  }
+}
+
+const MessageStyled = styled.div`
+  width: 100%;
+  height: ${props => props.theme.itemHeight};
+  padding: 10px;
+  background-color: ${props => {
+    switch (props.type) {
+      case 'info':
+        return '#00c42e';
+      case 'warning':
+        return '#ebbc01';
+      case 'error':
+        return '#dc3434';
+    }
+  }} ;
+  color: #ffffff;
+  
+  > span {
+    display: inline-block;
+    padding-left: 10px;
+  }
+  
+  > * {
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+    vertical-align: top;
+  }
+`;
+
+class Message extends Component {
+  render() {
+    const messageType = this.props.type;
+
+    return (
+      <MessageStyled type={messageType}>
+        <Icon>{messageType}</Icon>
+        <span>{this.props.children}</span>
+      </MessageStyled>
+    );
+  }
+}
+Message.propTypes = {
+  type: PropTypes.string.isRequired,
+};
+
 export {
   Icon,
   IconButton,
   SelectContainer,
   Title,
   Header,
+  Message,
+  Loading,
 };

@@ -1,7 +1,7 @@
 /**
  * @file
  * Injects new plugins to CRA without the need to eject the project.
- */
+
 
 const fs = require('fs');
 const path = require('path');
@@ -20,3 +20,4 @@ if (!text.includes('babel-plugin-relay')) {
         throw new Error(`Failed to inject babel-plugin-relay.`);
     }
 }
+ */

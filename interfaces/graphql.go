@@ -7,7 +7,6 @@ package interfaces
 
 import (
 	"github.com/graphql-go/graphql"
-	"github.com/graphql-go/relay"
 	"strconv"
 	"git.humbkr.com/jgalletta/alba-player/business"
 	"git.humbkr.com/jgalletta/alba-player/domain"
@@ -22,7 +21,17 @@ type graphQLInteractor struct {
 var artistType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "Artist",
 	Fields: graphql.Fields{
-		"id": relay.GlobalIDField("Artist", nil),
+		"id": &graphql.Field{
+			Name: "Artist ID",
+			Description: "Artist unique Identifier.",
+			Type: graphql.NewNonNull(graphql.ID),
+			Resolve: func (p graphql.ResolveParams) (interface{}, error) {
+				if artist, ok := p.Source.(domain.Artist); ok == true {
+					return artist.Id, nil
+				}
+				return nil, nil
+			},
+		},
 		"name": &graphql.Field{
 			Name: "Artist name",
 			Description: "Name of the artist.",
@@ -52,7 +61,17 @@ var artistType = graphql.NewObject(graphql.ObjectConfig{
 var albumType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "Album",
 	Fields: graphql.Fields{
-		"id": relay.GlobalIDField("Album", nil),
+		"id": &graphql.Field{
+			Name: "Album ID",
+			Description: "Album unique identifier.",
+			Type: graphql.NewNonNull(graphql.ID),
+			Resolve: func (p graphql.ResolveParams) (interface{}, error) {
+				if album, ok := p.Source.(domain.Album); ok == true {
+					return album.Id, nil
+				}
+				return nil, nil
+			},
+		},
 		"title": &graphql.Field{
 			Name: "Album title",
 			Description: "Title of the album.",
@@ -93,7 +112,17 @@ var albumType = graphql.NewObject(graphql.ObjectConfig{
 var trackType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "Track",
 	Fields: graphql.Fields{
-		"id": relay.GlobalIDField("Track", nil),
+		"id": &graphql.Field{
+			Name: "Track ID",
+			Description: "Track unique Identifier.",
+			Type: graphql.NewNonNull(graphql.ID),
+			Resolve: func (p graphql.ResolveParams) (interface{}, error) {
+				if track, ok := p.Source.(domain.Track); ok == true {
+					return track.Id, nil
+				}
+				return nil, nil
+			},
+		},
 		"title": &graphql.Field{
 			Name: "Track title",
 			Description: "Title of the track.",

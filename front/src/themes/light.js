@@ -4,7 +4,7 @@ const themeDefault = {
   separatorColor: '#cccccc',
   backgroundColor: '#ffffff',
   textPrimaryColor: '#000000',
-  textSecondaryColor: '#636363',
+  textSecondaryColor: '#959595',
 
   sidebar: {
     background: '#333333',

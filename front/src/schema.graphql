@@ -3,11 +3,21 @@ schema {
 }
 
 type Query {
+  album(id: ID!): Album
+  albums: [Album]
   artist(id: ID!): Artist
   artists: [Artist]
+}
+
+type Album {
+  id: ID!
+  title: String!
+  tracks: [Track]
+  artist: Artist
 }
 
 type Artist {
   id: ID!
   name: String!
+  albums: [Album]
 }

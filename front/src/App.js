@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
+import { ApolloProvider } from 'react-apollo';
 import { injectGlobal, ThemeProvider } from 'styled-components';
+import apolloClient from './graphql/apollo';
 import AppPage from './components/layout';
 
 import MaterialIconsEot from './assets/fonts/MaterialIcons-Regular.eot';
@@ -26,12 +28,29 @@ injectGlobal`
 `;
 
 class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      isSidebarOpen: false,
+    };
+
+    this.handleToggleSidebar = this.handleToggleSidebar.bind(this);
+  }
+
+  handleToggleSidebar() {
+    this.setState({
+      isSidebarOpen: !this.state.isSidebarOpen,
+    });
+  }
+
   render() {
     return (
       <ThemeProvider theme={themeDefault}>
-        <div className="App">
-          <AppPage title="Artists" />
-        </div>
+        <ApolloProvider client={apolloClient}>
+          <div className="App">
+            <AppPage title="Artists" />
+          </div>
+        </ApolloProvider>
       </ThemeProvider>
     );
   }

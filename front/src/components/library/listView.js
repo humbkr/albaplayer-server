@@ -53,6 +53,7 @@ class LibraryListView extends Component {
           itemDisplay={this.props.itemDisplay}
           orderBy={this.state.orderBy}
           searchFilter={this.state.search}
+          searchProperty={this.props.searchProperty}
         />
       </div>
     );
@@ -63,6 +64,7 @@ LibraryListView.propTypes = {
   itemDisplay: PropTypes.func,
   orderOptions: PropTypes.array.isRequired,
   defaultOrder: PropTypes.string,
+  searchProperty: PropTypes.string,
 };
 
 export default LibraryListView;

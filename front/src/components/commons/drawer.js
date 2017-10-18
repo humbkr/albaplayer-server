@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import styled, { css } from 'styled-components';
-import onClickOutside from 'react-onclickoutside'
 
 import {IconButton, Icon} from "./common";
 
@@ -66,15 +65,6 @@ class DrawerMenuDecorator extends Component {
     });
   }
 
-  // For onClickOutside package.
-  handleClickOutside(event) {
-    if (!this.props.persistant) {
-      this.setState({
-        open: false,
-      });
-    }
-  }
-
   render() {
     const isOpen = this.state.open;
 
@@ -107,4 +97,4 @@ DrawerMenuDecorator.propTypes = {
   onClose: PropTypes.func,
 };
 
-export default onClickOutside(DrawerMenuDecorator);
+export default DrawerMenuDecorator;
