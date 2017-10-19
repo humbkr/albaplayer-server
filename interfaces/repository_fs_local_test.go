@@ -8,6 +8,7 @@ import (
 	"git.humbkr.com/jgalletta/alba-player/business"
 	"github.com/spf13/viper"
 	"os"
+	"log"
 )
 
 type LocalFSRepoTestSuite struct {
@@ -21,20 +22,26 @@ func TestLocalFSRepoTestSuite(t *testing.T) {
 }
 
 func (suite *LocalFSRepoTestSuite) SetupSuite() {
-	coversDir := os.TempDir() + "/covers"
+	coversDir := os.TempDir() + string(os.PathSeparator) + "covers"
 	if _, err := os.Stat(coversDir); os.IsNotExist(err) {
 		os.Mkdir(coversDir, 0755)
 	}
 	viper.Set("Covers.Directory", coversDir)
+
+	ds, err := createTestDatasource()
+	if err != nil {
+		log.Fatal(err)
+	}
+	appContext := AppContext{DB: ds}
+	suite.LocalFSRepository = LocalFilesystemRepository{AppContext: &appContext}
 }
 
 func (suite *LocalFSRepoTestSuite) TearDownSuite() {
-	coversDir := os.TempDir() + "/covers"
+	coversDir := os.TempDir() + string(os.PathSeparator) + "covers"
 	if _, err := os.Stat(coversDir); err == nil {
 		os.Remove(coversDir)
 	}
 }
-
 
 func (suite *LocalFSRepoTestSuite) SetupTest() {}
 
@@ -43,8 +50,7 @@ Blackbox tests.
  */
 
 func (suite *LocalFSRepoTestSuite) TestScanMediaFiles() {
-	interactor := createMockLibraryInteractor()
-	processed, added := suite.LocalFSRepository.ScanMediaFiles(TestFSLibDir, interactor)
+	processed, added := suite.LocalFSRepository.ScanMediaFiles(TestFSLibDir)
 	assert.Equal(suite.T(), 7, processed)
 	assert.Equal(suite.T(), 7, added)
 }
@@ -59,105 +65,25 @@ func (suite *LocalFSRepoTestSuite) TestMediaFileExists() {
 	assert.Equal(suite.T(), false, exists)
 }
 
+// TODO test LocalFSRepository.WriteCoverFile.
+// TODO test LocalFSRepository.RemoveCoverFile.
+// TODO test LocalFSRepository.DeleteCovers.
+
 /*
 Below are whitebox (internal) tests.
  */
 
-func (suite *LocalFSRepoTestSuite) TestProcessArtist() {
-	interactor := createMockLibraryInteractor()
-
-	// Test with an existing artist.
-	meta := mediaMetadata{Artist: "Artist #1"}
-	id, err := processArtist(interactor, &meta)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), 1, id)
-
-	// Test with a new artist.
-	meta = mediaMetadata{Artist: "New Artist"}
-	id, err = processArtist(interactor, &meta)
-	assert.Nil(suite.T(), err)
-	assert.NotEmpty(suite.T(), id)
-
-	// Test with no artist.
-	meta = mediaMetadata{}
-	id, err = processArtist(interactor, &meta)
-	assert.NotNil(suite.T(), err)
-	assert.Empty(suite.T(), id)
-
-	return
-}
-
-func (suite *LocalFSRepoTestSuite) TestProcessAlbum() {
-	interactor := createMockLibraryInteractor()
-
-	// Test with an existing album having an artist.
-	meta := mediaMetadata{Album: "Album #1"}
-	id, err := processAlbum(interactor, &meta, 1)
-	assert.Nil(suite.T(), err)
-	assert.NotEmpty(suite.T(), id)
-
-	// Test with an existing album NOT having an artist.
-	meta = mediaMetadata{Album: "Album #2"}
-	id, err = processAlbum(interactor, &meta, 0)
-	assert.Nil(suite.T(), err)
-	assert.NotEmpty(suite.T(), id)
-
-	// Test with a new album.
-	meta = mediaMetadata{Album: "New Album"}
-	id, err = processAlbum(interactor, &meta, 1)
-	assert.Nil(suite.T(), err)
-	assert.NotEmpty(suite.T(), id)
-
-	// Test with no artist.
-	meta = mediaMetadata{}
-	id, err = processAlbum(interactor, &meta, 0)
-	assert.NotNil(suite.T(), err)
-	assert.Empty(suite.T(), id)
-
-	return
-}
-
-func (suite *LocalFSRepoTestSuite) TestProcessTrack() {
-	interactor := createMockLibraryInteractor()
-
-	// Test with an existing track having an artist and an album.
-	meta := mediaMetadata{Title: "Track #1", Path:"dummy"}
-	id, err := processTrack(interactor, &meta, 1, 1)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), 1, id)
-
-	// Test with an existing track NOT having an artist but having an album.
-	meta = mediaMetadata{Title: "Track #2", Path:"dummy"}
-	id, err = processTrack(interactor, &meta, 0, 1)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), 1, id)
-
-	// Test with an existing track NOT having an artist nor having an album.
-	meta = mediaMetadata{Title: "Track #3", Path:"dummy"}
-	id, err = processTrack(interactor, &meta, 0, 0)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), 1, id)
-
-	// Test with a new track.
-	meta = mediaMetadata{Title: "New Track", Path:"dummy"}
-	id, err = processTrack(interactor, &meta, 1, 1)
-	assert.Nil(suite.T(), err)
-	assert.NotEmpty(suite.T(), id)
-
-	// Test with no track.
-	meta = mediaMetadata{}
-	id, err = processTrack(interactor, &meta, 1, 1)
-	assert.NotNil(suite.T(), err)
-	assert.Empty(suite.T(), id)
-
-	return
-}
+// TODO Cannot test these functions because gorp.Transaction is not abstracted.
+func (suite *LocalFSRepoTestSuite) TestProcessArtist() {}
+func (suite *LocalFSRepoTestSuite) TestProcessAlbum() {}
+func (suite *LocalFSRepoTestSuite) TestProcessTrack() {}
+func (suite *LocalFSRepoTestSuite) TestProcessCover() {}
 
 // Test the preferred source selection only.
 func (suite *LocalFSRepoTestSuite) TestGetMediaCoverFile() {
 	// Test to get the cover from an image file when a cover tag is present.
 	track := domain.Track{Path: TestFSLibDir + "/no artist - album 1 - Track 1.mp3"}
-	cover, source, err := getMediaCoverFile(track, business.CoverPreferredSourceImgFile)
+	cover, source, err := getMediaCoverFile(&track, business.CoverPreferredSourceImgFile)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), business.CoverPreferredSourceImgFile, source)
 	assert.NotEmpty(suite.T(), cover.Hash)
@@ -166,12 +92,12 @@ func (suite *LocalFSRepoTestSuite) TestGetMediaCoverFile() {
 
 	// Test to get the cover from metatags when an image file is present.
 	track = domain.Track{Path: TestFSLibDir + "/no artist - album 1 - Track 1.mp3"}
-	cover, source, err = getMediaCoverFile(track, business.CoverPreferredSourceMeta)
+	cover, source, err = getMediaCoverFile(&track, business.CoverPreferredSourceMeta)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), business.CoverPreferredSourceMeta, source)
 	assert.NotEmpty(suite.T(), cover.Hash)
 	assert.NotEmpty(suite.T(), cover.Content)
-	assert.Equal(suite.T(), "jpg", cover.Ext)
+	assert.Equal(suite.T(), ".jpg", cover.Ext)
 
 	return
 }
@@ -208,7 +134,7 @@ func (suite *LocalFSRepoTestSuite) TestGetMediaCoverFromMetadata() {
 	assert.Nil(suite.T(), err)
 	assert.NotEmpty(suite.T(), cover.Hash)
 	assert.NotEmpty(suite.T(), cover.Content)
-	assert.Equal(suite.T(), "jpg", cover.Ext)
+	assert.Equal(suite.T(), ".jpg", cover.Ext)
 
 	// Test with no cover available
 	track = domain.Track{Path: TestFSLibDir + "/no artist - no album - no title.mp3"}
@@ -291,4 +217,16 @@ func (suite *LocalFSRepoTestSuite) TestGetMetadataFromFile() {
 	assert.NotNil(suite.T(), err)
 
 	return
+}
+
+func (suite *LocalFSRepoTestSuite) TestWriteCoverFileInternal() {
+	tmpCoversDirectory := viper.GetString("Covers.Directory")
+	cover, _ := getMediaCoverFromFolder(TestFSLibDir + "/artist 1/artist 1 - album 1/Artist 1 - Album 1 - Track 1.mp3")
+
+	err := writeCoverFile(&cover, tmpCoversDirectory)
+	assert.Nil(suite.T(), err)
+
+	// Try to read the created file on the filesystem.
+	exists := fileExists(tmpCoversDirectory + string(os.PathSeparator) + cover.Path)
+	assert.True(suite.T(), exists)
 }

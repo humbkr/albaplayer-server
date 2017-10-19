@@ -198,13 +198,13 @@ type artistRepositoryMock struct{
 	mock.Mock
 }
 
-// Not needed
+// Not needed.
 func (m *artistRepositoryMock) Get(id int) (entity domain.Artist, err error) {return}
 func (m *artistRepositoryMock) GetAll(hydrate bool) (entities domain.Artists, err error) {return}
 func (m *artistRepositoryMock) Delete(entity *domain.Artist) (err error) {return}
 func (m artistRepositoryMock) Exists(id int) bool {return true}
 
-// Returns a valid respones only for name "Artist #1"
+// Returns a valid respones only for name "Artist #1".
 func (m *artistRepositoryMock) GetByName(name string) (entity domain.Artist, err error) {
 	if name == "Artist #1" {
 		entity.Id = 1
@@ -356,7 +356,7 @@ type mediaRepositoryMock struct{
 }
 
 // Not needed.
-func (m *mediaRepositoryMock) ScanMediaFiles(path string, interactor *business.LibraryInteractor) (int, int) {return 0, 0}
+func (m *mediaRepositoryMock) ScanMediaFiles(path string) (int, int) {return 0, 0}
 func (m *mediaRepositoryMock) MediaFileExists(filepath string) bool {return true}
 func (m *mediaRepositoryMock) WriteCoverFile(file *domain.Cover, directory string) error {return nil}
 func (m *mediaRepositoryMock) RemoveCoverFile(file *domain.Cover, directory string) error {return nil}
