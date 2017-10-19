@@ -12,7 +12,6 @@ import (
 	gqlHandler "github.com/graphql-go/handler"
 	"github.com/mnmtanish/go-graphiql"
 	"github.com/rs/cors"
-	"time"
 )
 
 func main() {
@@ -48,15 +47,14 @@ func main() {
 	libraryInteractor.TrackRepository = interfaces.TrackDbRepository{AppContext: &appContext}
 	libraryInteractor.CoverRepository = interfaces.CoverDbRepository{AppContext: &appContext}
 	libraryInteractor.LibraryRepository = interfaces.LibraryDbRepository{AppContext: &appContext}
-	libraryInteractor.MediaFileRepository = interfaces.LocalFilesystemRepository{}
+	libraryInteractor.MediaFileRepository = interfaces.LocalFilesystemRepository{AppContext: &appContext}
 
 	// STUB: instanciate the database for tests.
 	/*t := time.Now()
 	fmt.Println(t.Format("15:04:05"))
 	libraryInteractor.EraseLibrary()
 	libraryInteractor.UpdateLibrary()
-	t2 := time.Now()
-	fmt.Println(t2.Format("15:04:05"))
+	fmt.Println(time.Since(t))
 	*/
 
 	// Instanciate the main Queue.
