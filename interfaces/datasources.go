@@ -42,10 +42,10 @@ func InitAlbaDatasource() (ds Datasource, err error) {
 	dbmap := &gorp.DbMap{Db: connection, Dialect: gorp.SqliteDialect{}}
 
 	// Bind tables to objects.
-	dbmap.AddTableWithName(domain.Artist{}, "artists").SetKeys(true, "Id")
-	dbmap.AddTableWithName(domain.Album{}, "albums").SetKeys(true, "Id")
-	dbmap.AddTableWithName(domain.Track{}, "tracks").SetKeys(true, "Id")
-	dbmap.AddTableWithName(domain.Cover{}, "covers").SetKeys(true, "Id")
+	dbmap.AddTableWithName(domain.Artist{}, "artists").SetKeys(true, "Id").AddIndex("ArtistNameIndex", "nil", []string{"name"})
+	dbmap.AddTableWithName(domain.Album{}, "albums").SetKeys(true, "Id").AddIndex("AlbumTitleIndex", "nil", []string{"title"})
+	dbmap.AddTableWithName(domain.Track{}, "tracks").SetKeys(true, "Id").AddIndex("TrackTitleIndex", "nil", []string{"title"})
+	dbmap.AddTableWithName(domain.Cover{}, "covers").SetKeys(true, "Id").AddIndex("CoverHashIndex", "nil", []string{"hash"})
 
 	// Create the tables.
 	err = dbmap.CreateTablesIfNotExists()

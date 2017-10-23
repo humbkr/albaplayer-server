@@ -9,25 +9,11 @@ import (
 const CoverPreferredSourceImgFile = "file"
 const CoverPreferredSourceMeta = "tag"
 
-type LibraryRepository interface {
-	Erase()
-}
-
-// Interface describing the storage mecanism for media.
-type MediaFileRepository interface {
-	// TODO Not abstract enough yet, we should not need a path but a reader or something.
-	ScanMediaFiles(path string) (int, int)
-	MediaFileExists(filepath string) bool
-	WriteCoverFile(file *domain.Cover, directory string) error
-	RemoveCoverFile(file *domain.Cover, directory string) error
-	DeleteCovers() error
-}
-
 type LibraryInteractor struct {
-	ArtistRepository  domain.ArtistRepository
-	AlbumRepository domain.AlbumRepository
-	TrackRepository domain.TrackRepository
-	CoverRepository domain.CoverRepository
+	ArtistRepository  ArtistRepository
+	AlbumRepository AlbumRepository
+	TrackRepository TrackRepository
+	CoverRepository CoverRepository
 	// TODO Check if the library repo should be an interface here.
 	LibraryRepository LibraryRepository
 	MediaFileRepository MediaFileRepository
@@ -83,7 +69,7 @@ func (interactor LibraryInteractor) GetAlbum(albumId int) (domain.Album, error) 
 // Gets all albums.
 //
 // If no albums found, returns an empty collection.
-func (interactor LibraryInteractor) GetAllAlbums(hydrate bool) (domain.Albums, error) {
+func (interactor LibraryInteractor) GetAllAlbums(hydrate bool) ([]AlbumView, error) {
 	return interactor.AlbumRepository.GetAll(hydrate)
 }
 

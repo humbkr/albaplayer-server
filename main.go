@@ -51,23 +51,17 @@ func main() {
 	libraryInteractor.MediaFileRepository = interfaces.LocalFilesystemRepository{AppContext: &appContext}
 
 	// STUB: instanciate the database for tests.
-	t := time.Now()
-	fmt.Println(t.Format("15:04:05"))
-	libraryInteractor.EraseLibrary()
-	libraryInteractor.UpdateLibrary()
-	fmt.Println(time.Since(t))
+	//libraryInteractor.EraseLibrary()
+	//libraryInteractor.UpdateLibrary()
 
 
 	// Instanciate the main Queue.
 	// TODO warning, only works for one user.
-	queue := business.GetQueueInstance()
-	queue.Library = libraryInteractor
+	//queue := business.GetQueueInstance()
+	//queue.Library = libraryInteractor
 
 
 	//queue.AppendAlbum(1)
-
-
-
 
 	// Initialize GraphQL stuff.
 	graphQLInteractor := interfaces.NewGraphQLInteractor(libraryInteractor)
@@ -91,4 +85,5 @@ func main() {
 	// Launch the server.
 	fmt.Printf("Server is up: http://localhost:%s/graphql", viper.GetString("Server.Port"))
 	http.ListenAndServe(":" + viper.GetString("Server.Port"), nil)
+
 }

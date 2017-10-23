@@ -48,9 +48,6 @@ const allAlbumsQuery = gql`
       id
       title
       year
-      artist {
-        name
-      }
     }
   }
 `;

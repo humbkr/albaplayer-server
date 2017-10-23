@@ -1,0 +1,37 @@
+schema {
+    query: Query
+}
+
+type Query {
+    album(id: ID!): Album
+    albums: [Album]
+    artist(id: ID!): Artist
+    artists: [Artist]
+    track(id: ID!) : Track
+    tracks : [Track]
+}
+
+type Album {
+    id: ID!
+    title: String!
+    artist: Artist
+    tracks: [Track]
+}
+
+type Artist {
+    id: ID!
+    name: String!
+    albums: [Album]
+}
+
+type Track {
+    id: ID!
+    title: String!
+    artist: Artist
+    album: Album
+    disc: String
+    number: Integer
+    duration: Integer
+    Genre: String
+    Path: String!
+}

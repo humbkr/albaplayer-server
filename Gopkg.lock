@@ -57,6 +57,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/mattn/go-zglob"
+  packages = [".","fastwalk"]
+  revision = "4ecb59231939b2e499b1f2fd8f075565977d2452"
+
+[[projects]]
+  branch = "master"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
   revision = "d0303fe809921458f417bcf828397a65db30a7e4"
@@ -172,6 +178,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6b0b922cea369f8bb8659a4587ee4605f564038b0b248428b2a1f92b376d24bf"
+  inputs-digest = "993eb4fd00d2c401552fa1f7d5dac0167da56049bce864027a6818aa52771e41"
   solver-name = "gps-cdcl"
   solver-version = 1

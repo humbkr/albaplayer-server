@@ -151,12 +151,15 @@ func (m *AlbumRepositoryMock) Get(id int) (entity domain.Album, err error) {
 }
 
 // Returns 3 albums.
-func (m *AlbumRepositoryMock) GetAll(hydrate bool) (entities domain.Albums, err error) {
+func (m *AlbumRepositoryMock) GetAll(hydrate bool) (entities []AlbumView, err error) {
 	for i := 1; i < 4; i++ {
-		album := domain.Album{
-			Id: i,
-			Title: "Album #" + strconv.Itoa(i),
-			Year: "2017",
+		album := AlbumView{
+			Album: domain.Album{
+				Id:    i,
+				Title: "Album #" + strconv.Itoa(i),
+				Year:  "2017",
+			},
+			ArtistName: "Artist for album #" + strconv.Itoa(i),
 		}
 
 		if hydrate {
@@ -195,7 +198,11 @@ func (m *AlbumRepositoryMock) GetByName(name string, artistId int) (entity domai
 // Returns album for artistId 1, else no albums.
 func (m *AlbumRepositoryMock) GetAlbumsForArtist(artistId int, hydrate bool) (entities domain.Albums, err error) {
 	if artistId == 1 {
-		entities, _ = m.GetAll(hydrate)
+		albumViews, _ := m.GetAll(hydrate)
+		for _, val := range albumViews {
+			entities = append(entities, val.Album)
+		}
+
 		for idx, val := range entities {
 			entities[idx].ArtistId = 1
 

@@ -2,6 +2,6 @@
 .idea
 
 # Application
-alba.db
+alba_tiny.db
 app.log
 vendor

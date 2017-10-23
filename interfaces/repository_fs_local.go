@@ -143,11 +143,10 @@ func processArtist(dbTransaction *gorp.Transaction, metadata *mediaMetadata) (id
 		if artist.Id != 0 {
 			// Update.
 			_, err = dbTransaction.Update(&artist)
-			return
 		} else {
 			// Insert new entity.
 			err = dbTransaction.Insert(&artist)
-			return
+
 		}
 		if err == nil {
 			id = artist.Id
@@ -182,11 +181,9 @@ func processAlbum(dbTransaction *gorp.Transaction, metadata *mediaMetadata, arti
 		if album.Id != 0 {
 			// Update.
 			_, err = dbTransaction.Update(&album)
-			return
 		} else {
 			// Insert new entity.
 			err = dbTransaction.Insert(&album)
-			return
 		}
 
 		if err == nil {
@@ -236,11 +233,9 @@ func processTrack(dbTransaction *gorp.Transaction, metadata *mediaMetadata, arti
 	if track.Id != 0 {
 		// Update.
 		_, err = dbTransaction.Update(&track)
-		return
 	} else {
 		// Insert new entity.
 		err = dbTransaction.Insert(&track)
-		return
 	}
 
 	if err == nil {
@@ -296,11 +291,13 @@ func getMetadataFromFile(filePath string) (info mediaMetadata, err error) {
 	if errTags == nil {
 		// Get all we can from the common tags.
 		info.Format = string(tags.FileType())
-		info.Title = tags.Title()
-		info.Album = tags.Album()
-		info.Artist = tags.Artist()
-		info.Genre = tags.Genre()
-		info.Year = strconv.Itoa(tags.Year())
+		info.Title = sanitizeString(tags.Title())
+		info.Album = sanitizeString(tags.Album())
+		info.Artist = sanitizeString(tags.Artist())
+		info.Genre = sanitizeString(tags.Genre())
+		if tags.Year() != 0 {
+			info.Year = strconv.Itoa(tags.Year())
+		}
 		info.Track, _ = tags.Track()
 		info.Picture = tags.Picture()
 
@@ -314,8 +311,9 @@ func getMetadataFromFile(filePath string) (info mediaMetadata, err error) {
 	// If the track has no title, fallback to the filename.
 	if info.Title == "" {
 		_, f := path.Split(filePath)
-		var extension = filepath.Ext(f)
-		info.Title = f[0 : len(f)-len(extension)]
+		extension := filepath.Ext(f)
+		filename := filepath.Base(f)
+		info.Title = filename[0 : len(filename) - len(extension)]
 	}
 
 	// If the file is an mp3, get some more info.
@@ -454,4 +452,9 @@ func md5Checksum(reader io.Reader) (hash string, err error) {
 
 	hash = hex.EncodeToString(hasher.Sum(nil))
 	return
+}
+
+// Removes spaces and nul character from a string.
+func sanitizeString(s string) string {
+	return strings.Trim(strings.TrimSpace(s), "\x00")
 }

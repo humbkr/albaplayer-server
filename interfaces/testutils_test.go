@@ -237,11 +237,11 @@ type albumRepositoryMock struct{
 }
 
 // Not needed.
-func (m *albumRepositoryMock) Get(id int) (entity domain.Album, err error)                                       {return}
-func (m *albumRepositoryMock) GetAll(hydrate bool) (entities domain.Albums, err error)                           {return}
+func (m *albumRepositoryMock) Get(id int) (entity domain.Album, err error) {return}
+func (m *albumRepositoryMock) GetAll(hydrate bool) (entities []business.AlbumView, err error) {return}
 func (m *albumRepositoryMock) GetAlbumsForArtist(artistId int, hydrate bool) (entities domain.Albums, err error) {return}
-func (m *albumRepositoryMock) Delete(entity *domain.Album) (err error)                                           {return}
-func (m albumRepositoryMock) Exists(id int) bool                                                                 {return false}
+func (m *albumRepositoryMock) Delete(entity *domain.Album) (err error) {return}
+func (m albumRepositoryMock) Exists(id int) bool {return false}
 
 // Returns a valid response for name "Album #1" for artistId 1.
 // Returns a valid response for name "Album #2" for empty artistId.
@@ -360,3 +360,4 @@ func (m *mediaRepositoryMock) ScanMediaFiles(path string) (int, int) {return 0, 
 func (m *mediaRepositoryMock) MediaFileExists(filepath string) bool {return true}
 func (m *mediaRepositoryMock) WriteCoverFile(file *domain.Cover, directory string) error {return nil}
 func (m *mediaRepositoryMock) RemoveCoverFile(file *domain.Cover, directory string) error {return nil}
+func (m *mediaRepositoryMock) DeleteCovers() error {return nil}
