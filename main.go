@@ -12,7 +12,6 @@ import (
 	gqlHandler "github.com/graphql-go/handler"
 	"github.com/mnmtanish/go-graphiql"
 	"github.com/rs/cors"
-	"time"
 )
 
 func main() {
@@ -79,8 +78,12 @@ func main() {
 	// Serve a GraphQL endpoint at `/graphql`.
 	http.Handle("/graphql", apiHandler)
 
+	// Serve cover file.
+	coversHandler := http.FileServer(http.Dir("covers"))
+	http.Handle("/covers/", http.StripPrefix("/covers/", coversHandler))
+
 	// Serve graphiql.
-	http.HandleFunc("/", graphiql.ServeGraphiQL)
+	http.HandleFunc("/graphiql", graphiql.ServeGraphiQL)
 
 	// Launch the server.
 	fmt.Printf("Server is up: http://localhost:%s/graphql", viper.GetString("Server.Port"))

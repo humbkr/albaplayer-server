@@ -4,4 +4,7 @@
 # Application
 alba_tiny.db
 app.log
+/covers
+
+# Dependencies
 vendor

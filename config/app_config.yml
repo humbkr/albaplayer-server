@@ -6,8 +6,8 @@ DB:
     Driver: sqlite3
     File: ./alba.db
 Covers:
-    #Directory: ./covers
-    Directory: C:\Users\humbk\Pictures\alba_covers
+    Directory: ./covers
+    #Directory: C:\Users\humbk\Pictures\alba_covers
 
 # Logging system.
 Log:
