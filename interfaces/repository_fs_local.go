@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"git.humbkr.com/jgalletta/alba-player/business"
 	"git.humbkr.com/jgalletta/alba-player/domain"
 	"github.com/dhowden/tag"
 	mp3info "github.com/xhenner/mp3-go"
@@ -26,15 +27,16 @@ import (
 Stores media metadata retrieved from different sources.
 */
 type mediaMetadata struct {
-	Format  string
-	Title   string
-	Album   string
-	Artist  string
-	Genre   string
-	Year    string
-	Track   int
-	Disc    string // Format: <number>/<total>
-	Picture *tag.Picture
+	Format  	string
+	Title   	string
+	Album   	string
+	Artist  	string
+	AlbumArtist string
+	Genre   	string
+	Year    	string
+	Track   	int
+	Disc    	string // Format: <number>/<total>
+	Picture 	*tag.Picture
 
 	Duration int
 
@@ -46,13 +48,8 @@ type LocalFilesystemRepository struct{
 	AppContext *AppContext
 }
 
-// Recursively browses a directory and import / update all the audio files in the database.
-
-// Returns the number of items processed and added.
 func (r LocalFilesystemRepository) ScanMediaFiles(path string) (processed int, added int) {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return
-	}
+	log.Println("Scanning files in " + path)
 
 	// TODO Find a way to not have to get the datasource implementation.
 	gorpDbMap, ok := r.AppContext.DB.(*gorp.DbMap)
@@ -61,44 +58,116 @@ func (r LocalFilesystemRepository) ScanMediaFiles(path string) (processed int, a
 	}
 
 	dbTransaction, _ := gorpDbMap.Begin()
-
-	filepath.Walk(path, func(filePath string, fileInfo os.FileInfo, err error) error {
-		if matched, _ := filepath.Match("*.mp3", fileInfo.Name()); matched {
-			metadata, err := getMetadataFromFile(filePath)
-			if err == nil {
-				var artistId int
-				var albumId int
-
-				artistId, err = processArtist(dbTransaction, &metadata)
-				if err != nil {
-					// TODO devise a decent logging system.
-					log.Println(err)
-				}
-
-				albumId, err = processAlbum(dbTransaction, &metadata, artistId)
-				if err != nil {
-					// TODO devise a decent logging system.
-					log.Println(err)
-				}
-
-				_, err := processTrack(dbTransaction, &metadata, artistId, albumId)
-				if err != nil {
-					// TODO devise a decent logging system.
-					log.Println(err)
-				} else {
-					added++
-				}
-			}
-
-			processed++
-		}
-
-		return nil
-	})
-
+	scanDirectory(path, dbTransaction)
 	dbTransaction.Commit()
 
 	return
+}
+
+// Recursively browses a directory and import / update all the audio files in the database.
+func scanDirectory(path string, dbTransaction *gorp.Transaction) {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return
+	}
+
+	currentDir := filepath.Clean(path) + string(os.PathSeparator)
+
+	// Collection of tracks found in the directory indexed by album.
+	mediaFiles := make(map[string][]mediaMetadata)
+
+	// Get all the entries in the current directory.
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		return
+	}
+
+	cpt := 0
+
+	for _, file := range files {
+		filePath := currentDir + file.Name()
+
+		if file.IsDir() {
+			// Recursion.
+			scanDirectory(filePath, dbTransaction)
+		} else if matched, _ := filepath.Match("*.mp3", file.Name()); matched {
+			// Get ID3 metadata and add it to an array.
+			metadata, err := getMetadataFromFile(filePath)
+			if err == nil {
+				// Add metadata info to the list of media files, sorting by albums.
+				if len(metadata.Album) > 0 {
+					mediaFiles[metadata.Album] = append(mediaFiles[metadata.Album], metadata)
+				} else {
+					mediaFiles[business.LibraryDefaultArtist] = append(mediaFiles[business.LibraryDefaultArtist], metadata)
+				}
+			}
+
+			cpt++
+		} else if matched, _ := filepath.Match("*.jpg", file.Name()); matched {
+			// It's a good candidate for an album cover, so keep it somewhere.
+		}
+	}
+
+	processMediaFiles(mediaFiles, dbTransaction)
+}
+
+func processMediaFiles(mediaFiles map[string][]mediaMetadata, dbTransaction *gorp.Transaction) {
+	var err error
+
+	// Process the media files per album.
+	for _, album := range mediaFiles {
+
+		// Here we try to figure out if the album is a compilation or not.
+		// If at least 2 of the tracks have different artists, this must be a compilation.
+		compilation := false
+
+		currentArtist := album[0].Artist
+		for index, metadataTrack := range album {
+			if index > 0 && metadataTrack.Artist != currentArtist {
+				compilation = true
+				break
+			}
+		}
+
+		// Now we process the metadata to populate the library.
+		for _, metadataTrack := range album {
+			if compilation {
+				metadataTrack.AlbumArtist = business.LibraryDefaultCompilationArtist
+			}
+
+			var artistId int
+			var albumId int
+
+			artistId, err = processArtist(dbTransaction, &metadataTrack)
+			if err != nil {
+				// TODO devise a decent logging system.
+				log.Println(err)
+			}
+
+			albumArtistId := artistId
+			if compilation {
+				// Get the artist id of "Various artists".
+				var entities domain.Artists
+				_, transErr := dbTransaction.Select(&entities, "SELECT * FROM artists WHERE name = ?", business.LibraryDefaultCompilationArtist)
+				if transErr == nil {
+					if len(entities) > 0 {
+						albumArtistId = entities[0].Id
+					}
+				}
+			}
+
+			albumId, err = processAlbum(dbTransaction, &metadataTrack, albumArtistId)
+			if err != nil {
+				// TODO devise a decent logging system.
+				log.Println(err)
+			}
+
+			_, err := processTrack(dbTransaction, &metadataTrack, artistId, albumId)
+			if err != nil {
+				// TODO devise a decent logging system.
+				log.Println(err)
+			}
+		}
+	}
 }
 
 // Checks if a media file physically exists.
@@ -293,6 +362,7 @@ func getMetadataFromFile(filePath string) (info mediaMetadata, err error) {
 		info.Format = string(tags.FileType())
 		info.Title = sanitizeString(tags.Title())
 		info.Album = sanitizeString(tags.Album())
+		info.AlbumArtist = sanitizeString(tags.AlbumArtist())
 		info.Artist = sanitizeString(tags.Artist())
 		info.Genre = sanitizeString(tags.Genre())
 		if tags.Year() != 0 {

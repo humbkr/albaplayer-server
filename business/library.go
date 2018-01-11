@@ -4,10 +4,15 @@ import (
 	"git.humbkr.com/jgalletta/alba-player/domain"
 	"github.com/spf13/viper"
 	"errors"
+	"log"
 )
 
 const CoverPreferredSourceImgFile = "file"
 const CoverPreferredSourceMeta = "tag"
+const LibraryDefaultArtist = "Unknown artist"
+const LibraryDefaultAlbum = "Unknown album"
+const LibraryDefaultCompilationArtist = "Various artists"
+
 
 type LibraryInteractor struct {
 	ArtistRepository  ArtistRepository
@@ -248,8 +253,15 @@ func (interactor LibraryInteractor) UpdateLibrary() {
 
 // TODO How to unit test this?
 func (interactor LibraryInteractor) EraseLibrary() {
+	log.Println("Erase library")
 	interactor.LibraryRepository.Erase()
 	interactor.MediaFileRepository.DeleteCovers()
+
+	// Initilise library.
+	artist := domain.Artist{
+		Name: LibraryDefaultCompilationArtist,
+	}
+	interactor.ArtistRepository.Save(&artist)
 }
 
 /**

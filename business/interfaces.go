@@ -2,8 +2,8 @@ package business
 
 import "git.humbkr.com/jgalletta/alba-player/domain"
 
-// Album view containing more data usefull for the app.
-// This is to limit to the maximum requests needed to populate objects from DB.
+// Album view containing more data useful for the app.
+// This is to limit to the maximum the requests needed to populate objects from DB.
 type AlbumView struct {
 	domain.Album
 	ArtistName 	string
