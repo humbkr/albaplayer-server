@@ -1,10 +1,14 @@
 # IDEs
 .idea
 
+# OS
+.DS_Store
+
 # Application
-alba_tiny.db
+alba.db
 app.log
 /covers
 
 # Dependencies
 vendor
+

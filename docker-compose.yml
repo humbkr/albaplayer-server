@@ -1,0 +1,13 @@
+version: '3'
+services:
+    server:
+        build:
+            context: .
+            dockerfile: ./Dockerfile
+        volumes:
+            - .:/go/src/git.humbkr.com/jgalletta/alba-player
+        working_dir: /go/src/git.humbkr.com/jgalletta/alba-player
+        ports:
+            - 8888
+        # Make container run indefinitely
+        command: "tail -f /dev/null"

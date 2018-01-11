@@ -1,0 +1,23 @@
+# Database.
+DB:
+    Driver: sqlite3
+    File: ./alba.db
+Covers:
+    Directory: ./covers
+    #Directory: C:\Users\humbk\Pictures\alba_covers
+
+# Logging system.
+Log:
+    File: app.log
+    Path: ./
+
+# Webserver configuration.
+Server:
+    Port: 8888
+
+# Library configuration.
+Library:
+    #Folder: C:\Users\humbk\Music\alba-player\media
+    Folder: /Users/julien/Music/tmp/alba
+    # Preferred source for media cover image ("tag" or "file")
+    CoverPreferredSource: file
