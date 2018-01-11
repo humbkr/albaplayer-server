@@ -103,6 +103,17 @@ var albumType = graphql.NewObject(graphql.ObjectConfig{
 				return nil, nil
 			},
 		},
+		"artistId": &graphql.Field{
+			Name: "Artist ID",
+			Description: "Shorthand property for performance, avoid loading an artist for each album.",
+			Type: graphql.ID,
+			Resolve: func (p graphql.ResolveParams) (interface{}, error) {
+				if album, ok := p.Source.(business.AlbumView); ok == true {
+					return album.ArtistId, nil
+				}
+				return nil, nil
+			},
+		},
 		"artistName": &graphql.Field{
 			Name: "Artist name",
 			Description: "Shorthand property for performance, avoid loading an artist for each album.",
@@ -201,13 +212,36 @@ var trackType = graphql.NewObject(graphql.ObjectConfig{
 				return nil, nil
 			},
 		},
-		"path": &graphql.Field{
+		"src": &graphql.Field{
 			Name: "Track path",
-			Description: "Localisation of the media file on the computer.",
+			Description: "Localisation of the media file on the server.",
 			Type: graphql.NewNonNull(graphql.String),
 			Resolve: func (p graphql.ResolveParams) (interface{}, error) {
 				if track, ok := p.Source.(domain.Track); ok == true {
+					// TODO write a function to stream the file.
 					return track.Path, nil
+				}
+				return nil, nil
+			},
+		},
+		"artistId": &graphql.Field{
+			Name: "Artist ID",
+			Description: "Shorthand property for performance, avoid loading an artist for each track.",
+			Type: graphql.ID,
+			Resolve: func (p graphql.ResolveParams) (interface{}, error) {
+				if track, ok := p.Source.(domain.Track); ok == true {
+					return track.ArtistId, nil
+				}
+				return nil, nil
+			},
+		},
+		"albumId": &graphql.Field{
+			Name: "Album ID",
+			Description: "Shorthand property for performance, avoid loading an album for each track.",
+			Type: graphql.ID,
+			Resolve: func (p graphql.ResolveParams) (interface{}, error) {
+				if track, ok := p.Source.(domain.Track); ok == true {
+					return track.AlbumId, nil
 				}
 				return nil, nil
 			},
@@ -288,7 +322,7 @@ func NewGraphQLInteractor(ci *business.LibraryInteractor) *graphQLInteractor {
 	albumType.AddFieldConfig("artist", &graphql.Field{
 		Type: artistType,
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			if album, ok := p.Source.(domain.Album); ok == true && album.ArtistId != 0 {
+			if album, ok := p.Source.(business.AlbumView); ok == true && album.ArtistId != 0 {
 				return interactor.Library.ArtistRepository.Get(album.ArtistId)
 			}
 
@@ -307,7 +341,7 @@ func NewGraphQLInteractor(ci *business.LibraryInteractor) *graphQLInteractor {
 		},
 	})
 	trackType.AddFieldConfig("album", &graphql.Field{
-		Type: artistType,
+		Type: albumType,
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 			if track, ok := p.Source.(domain.Track); ok == true && track.AlbumId != 0 {
 				return interactor.Library.AlbumRepository.Get(track.AlbumId)
