@@ -16,8 +16,8 @@ import (
 
 func main() {
 	// Load app configuration.
-	viper.SetConfigName("app_config")
-	viper.AddConfigPath("./config")
+	viper.SetConfigName("alba")
+	viper.AddConfigPath("./")
 
 	err := viper.ReadInConfig()
 	if err != nil {
@@ -27,9 +27,9 @@ func main() {
 	// Initialize logging system.
 	log.SetOutput(&lumberjack.Logger{
 		Filename:   viper.GetString("Log.Path") + viper.GetString("Log.File"),
-		MaxSize:    500, // Megabytes.
+		MaxSize:    10, // Megabytes.
 		MaxBackups: 3,
-		MaxAge:     28, // Days.
+		MaxAge:     15, // Days.
 	})
 
 	// Create app context.
@@ -50,8 +50,8 @@ func main() {
 	libraryInteractor.MediaFileRepository = interfaces.LocalFilesystemRepository{AppContext: &appContext}
 
 	// STUB: instanciate the database for tests.
-	//libraryInteractor.EraseLibrary()
-	//libraryInteractor.UpdateLibrary()
+	libraryInteractor.EraseLibrary()
+	libraryInteractor.UpdateLibrary()
 
 
 	// Instanciate the main Queue.
@@ -72,21 +72,26 @@ func main() {
 		Pretty: true,
 	})
 
-	// Make the server handle cross-domain requests.
-	apiHandler := cors.Default().Handler(graphQLHandler)
-
 	// Serve a GraphQL endpoint at `/graphql`.
-	http.Handle("/graphql", apiHandler)
+	// Make the server handle cross-domain requests.
+	http.Handle("/graphql", cors.Default().Handler(graphQLHandler))
 
-	// Serve cover file.
-	coversHandler := http.FileServer(http.Dir("covers"))
-	http.Handle("/covers/", http.StripPrefix("/covers/", coversHandler))
+	// Serve media files streaming endpoint.
+	// Makes the server handle cross-domain requests.
+	mediaFilesHandler := interfaces.NewMediaStreamHandler(libraryInteractor)
+	http.Handle("/stream/", http.StripPrefix("/stream/", cors.Default().Handler(mediaFilesHandler)))
 
-	// Serve graphiql.
-	http.HandleFunc("/graphiql", graphiql.ServeGraphiQL)
+	// Serve media files streaming endpoint.
+	// Makes the server handle cross-domain requests.
+	coverFilesHandler := interfaces.NewCoverStreamHandler(libraryInteractor)
+	http.Handle("/covers/", http.StripPrefix("/covers/", cors.Default().Handler(coverFilesHandler)))
+
+    if viper.GetBool("DevMode.Enabled") {
+		// Serve graphiql.
+		http.HandleFunc("/graphiql", graphiql.ServeGraphiQL)
+	}
 
 	// Launch the server.
-	fmt.Printf("Server is up: http://localhost:%s/graphql", viper.GetString("Server.Port"))
+	log.Printf("Server is up: http://localhost:%s/graphql\n", viper.GetString("Server.Port"))
 	http.ListenAndServe(":" + viper.GetString("Server.Port"), nil)
-
 }

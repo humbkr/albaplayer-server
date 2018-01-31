@@ -23,6 +23,20 @@ import (
 	"github.com/spf13/viper"
 )
 
+var validCoverExtensions = []string{
+	".png",
+	".jpg",
+	".jpeg",
+	".gif",
+}
+
+var validCoverNames = []string{
+	"cover",
+	"artwork",
+	"album",
+	"front",
+}
+
 /**
 Stores media metadata retrieved from different sources.
 */
@@ -49,8 +63,6 @@ type LocalFilesystemRepository struct{
 }
 
 func (r LocalFilesystemRepository) ScanMediaFiles(path string) (processed int, added int) {
-	log.Println("Scanning files in " + path)
-
 	// TODO Find a way to not have to get the datasource implementation.
 	gorpDbMap, ok := r.AppContext.DB.(*gorp.DbMap)
 	if !ok {
@@ -75,13 +87,13 @@ func scanDirectory(path string, dbTransaction *gorp.Transaction) {
 	// Collection of tracks found in the directory indexed by album.
 	mediaFiles := make(map[string][]mediaMetadata)
 
+	potentialAlbumCover := ""
+
 	// Get all the entries in the current directory.
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		return
 	}
-
-	cpt := 0
 
 	for _, file := range files {
 		filePath := currentDir + file.Name()
@@ -100,18 +112,18 @@ func scanDirectory(path string, dbTransaction *gorp.Transaction) {
 					mediaFiles[business.LibraryDefaultArtist] = append(mediaFiles[business.LibraryDefaultArtist], metadata)
 				}
 			}
-
-			cpt++
-		} else if matched, _ := filepath.Match("*.jpg", file.Name()); matched {
-			// It's a good candidate for an album cover, so keep it somewhere.
+		} else if len(potentialAlbumCover) == 0 && isValidCoverFile(file.Name()) {
+			// It's a good candidate for an album cover, so keep it.
+			potentialAlbumCover = filePath
 		}
 	}
 
-	processMediaFiles(mediaFiles, dbTransaction)
+	processMediaFiles(mediaFiles, potentialAlbumCover, dbTransaction)
 }
 
-func processMediaFiles(mediaFiles map[string][]mediaMetadata, dbTransaction *gorp.Transaction) {
+func processMediaFiles(mediaFiles map[string][]mediaMetadata, cover string, dbTransaction *gorp.Transaction) {
 	var err error
+	uniqueAlbum := len(mediaFiles) < 2
 
 	// Process the media files per album.
 	for _, album := range mediaFiles {
@@ -129,6 +141,7 @@ func processMediaFiles(mediaFiles map[string][]mediaMetadata, dbTransaction *gor
 		}
 
 		// Now we process the metadata to populate the library.
+		// TODO: This could be more efficient as we do the same album process for each track.
 		for _, metadataTrack := range album {
 			if compilation {
 				metadataTrack.AlbumArtist = business.LibraryDefaultCompilationArtist
@@ -136,11 +149,28 @@ func processMediaFiles(mediaFiles map[string][]mediaMetadata, dbTransaction *gor
 
 			var artistId int
 			var albumId int
+			var albumCoverId int
 
 			artistId, err = processArtist(dbTransaction, &metadataTrack)
 			if err != nil {
 				// TODO devise a decent logging system.
 				log.Println(err)
+			}
+
+			if uniqueAlbum && len(cover) > 0 {
+				// There is only one album in the directory and we found a valid cover file, so add the cover to the
+				// database.
+				albumCover, errCover := getMediaCoverFromImageFile(cover)
+				if errCover != nil {
+					// TODO devise a decent logging system.
+					log.Println(errCover)
+				} else {
+					albumCoverId, errCover = processCover(dbTransaction, albumCover)
+					if errCover != nil {
+						// TODO devise a decent logging system.
+						log.Println(errCover)
+					}
+				}
 			}
 
 			albumArtistId := artistId
@@ -155,13 +185,29 @@ func processMediaFiles(mediaFiles map[string][]mediaMetadata, dbTransaction *gor
 				}
 			}
 
-			albumId, err = processAlbum(dbTransaction, &metadataTrack, albumArtistId)
+			albumId, err = processAlbum(dbTransaction, &metadataTrack, albumArtistId, albumCoverId)
 			if err != nil {
 				// TODO devise a decent logging system.
 				log.Println(err)
 			}
 
-			_, err := processTrack(dbTransaction, &metadataTrack, artistId, albumId)
+			// Find out what cover we can set to the track based on config preferences.
+			// Default to the one we may have found previously in the folder if there is tracks from one album only.
+			var trackCoverId = albumCoverId
+			if viper.GetString("Library.CoverPreferredSource") == business.CoverPreferredSourceMeta {
+				// Track metadata has priority, so try to find a cover in metadata.
+				trackCover, err := getMediaCoverFromTrackMetadata(metadataTrack)
+				if err == nil {
+					// Found one, use it.
+					trackCoverId, err = processCover(dbTransaction, trackCover)
+					if err != nil {
+						// TODO devise a decent logging system.
+						log.Println(err)
+					}
+				}
+			}
+
+			_, err := processTrack(dbTransaction, &metadataTrack, artistId, albumId, trackCoverId)
 			if err != nil {
 				// TODO devise a decent logging system.
 				log.Println(err)
@@ -230,7 +276,7 @@ func processArtist(dbTransaction *gorp.Transaction, metadata *mediaMetadata) (id
 // Saves an album info in the database.
 //
 // Returns a album id.
-func processAlbum(dbTransaction *gorp.Transaction, metadata *mediaMetadata, artistId int) (id int, err error) {
+func processAlbum(dbTransaction *gorp.Transaction, metadata *mediaMetadata, artistId int, coverId int) (id int, err error) {
 	if metadata.Album != "" {
 		album := domain.Album{}
 		// See if the album exists and if so instanciate it with existing data.
@@ -246,6 +292,7 @@ func processAlbum(dbTransaction *gorp.Transaction, metadata *mediaMetadata, arti
 		album.ArtistId = artistId
 		// TODO Track all the years from an album tracks and compute the final value.
 		album.Year = metadata.Year
+		album.CoverId = coverId
 
 		if album.Id != 0 {
 			// Update.
@@ -270,7 +317,7 @@ func processAlbum(dbTransaction *gorp.Transaction, metadata *mediaMetadata, arti
 // Returns a track id.
 //
 // TODO: Use checksum from tag.Sum() to search for existing track for an artist + album.
-func processTrack(dbTransaction *gorp.Transaction, metadata *mediaMetadata, artistId int, albumId int) (id int, err error) {
+func processTrack(dbTransaction *gorp.Transaction, metadata *mediaMetadata, artistId int, albumId int, coverId int) (id int, err error) {
 	if metadata.Title == "" {
 		return 0, errors.New("no track title provided")
 	}
@@ -293,11 +340,7 @@ func processTrack(dbTransaction *gorp.Transaction, metadata *mediaMetadata, arti
 	track.Genre = metadata.Genre
 	track.Duration = metadata.Duration
 	track.Path = metadata.Path
-
-	coverId, err := processCover(dbTransaction, &track)
-	if err == nil {
-		track.CoverId = coverId
-	}
+	track.CoverId = coverId
 
 	if track.Id != 0 {
 		// Update.
@@ -317,34 +360,32 @@ func processTrack(dbTransaction *gorp.Transaction, metadata *mediaMetadata, arti
 // Saves a cover info in the database and filesystem.
 //
 // Returns a cover id.
-func processCover(dbTransaction *gorp.Transaction, track *domain.Track) (id int, err error) {
-	coverFile, _, err := getMediaCoverFile(track, viper.GetString("Library.CoverPreferredSource"))
-	if err == nil {
-		cover := coverFile
-		cover.Path = coverFile.Hash + coverFile.Ext
+func processCover(dbTransaction *gorp.Transaction, cover domain.Cover) (id int, err error) {
+	cover.Path = cover.Hash + cover.Ext
 
-		var coverFromDb domain.Cover
-		coverExistsErr := dbTransaction.SelectOne(&coverFromDb, "SELECT * FROM covers WHERE hash = ?", coverFile.Hash)
-		if coverExistsErr == nil && coverFromDb.Id != 0 {
-			// Nothing to do about the cover, just return the cover id to be used to link it to the track.
-			id = coverFromDb.Id
-			return
-		}
+	var coverFromDb domain.Cover
+	coverExistsErr := dbTransaction.SelectOne(&coverFromDb, "SELECT * FROM covers WHERE hash = ?", cover.Hash)
+	if coverExistsErr == nil && coverFromDb.Id != 0 {
+		// Nothing to do about the cover, just return the cover id to be used to link it to the track.
+		id = coverFromDb.Id
 
-		// Else we have to save a new cover to database.
-		err = dbTransaction.Insert(&cover)
-		// And to filesystem.
-		if err == nil && cover.Id != 0 {
-			// Save image file.
-			err = writeCoverFile(&cover, viper.GetString("Covers.Directory"))
-		}
+		return
+	}
+
+	// Else we have to add a new cover in the database.
+	err = dbTransaction.Insert(&cover)
+	// And to the filesystem.
+	if err == nil && cover.Id != 0 {
+		id = cover.Id
+		// Save image file.
+		err = writeCoverFile(&cover, viper.GetString("Covers.Directory"))
 	}
 
 	return
 }
 
 /**
-Get media matadata from a file.
+Gets media matadata from a file.
 
 Uses multiple libraries to get a maximum of info depending on the format.
 */
@@ -387,8 +428,8 @@ func getMetadataFromFile(filePath string) (info mediaMetadata, err error) {
 	}
 
 	// If the file is an mp3, get some more info.
-	if strings.ToLower(filepath.Ext(filePath)) == "mp3" {
-		mp3Info, err := mp3info.Examine(filePath, false)
+	if strings.ToLower(filepath.Ext(filePath)) == ".mp3" {
+		mp3Info, err := mp3info.Examine(filePath, true)
 		if err == nil {
 			info.Duration = int(math.Floor(mp3Info.Length + .5))
 		}
@@ -400,110 +441,74 @@ func getMetadataFromFile(filePath string) (info mediaMetadata, err error) {
 	return
 }
 
-// Gets media cover image.
-//
-// Get data from media metadata and / or image file located in the same directory.
-func getMediaCoverFile(track *domain.Track, preferredSource string) (cover domain.Cover, source string, err error) {
-	if preferredSource == "file" {
-		cover, err = getMediaCoverFromFolder(track.Path)
-		if err == nil {
-			source = preferredSource
-			return
-		}
-
-		cover, err = getMediaCoverFromMetadata(track.Path)
-		source = "tag"
-		return
-	} else {
-		cover, err = getMediaCoverFromMetadata(track.Path)
-		if err == nil {
-			source = preferredSource
-			return
-		}
-
-		cover, err = getMediaCoverFromFolder(track.Path)
-		source = "file"
-		return
-	}
-
-	return cover, "", errors.New("no cover image found")
-}
-
-// Get media cover from file located in the media file folder.
+// Get media cover from file.
 //
 // Returns the info for the first image file that matches.
-func getMediaCoverFromFolder(mediaPath string) (cover domain.Cover, err error) {
-	var validCoverExtensions = []string{
-		".jpg",
-		".jpeg",
-		".png",
-		".gif",
-	}
+func getMediaCoverFromImageFile(coverFilepath string) (cover domain.Cover, err error) {
+	if fileExists(coverFilepath) {
+		if isValidCoverFile(filepath.Base(coverFilepath)) {
+			fileContent, errRead := ioutil.ReadFile(coverFilepath)
+			if errRead == nil {
+				reader := bytes.NewReader(fileContent)
+				hash, errSum := md5Checksum(reader)
+				if errSum == nil {
+					cover.Ext = filepath.Ext(coverFilepath)
+					cover.Hash = hash
+					cover.Content = fileContent
 
-	var validCoverNames = []string{
-		"cover",
-		"artwork",
-		"album",
-		"front",
-	}
-
-	directory := filepath.Dir(mediaPath)
-	for _, name := range validCoverNames {
-		for _, ext := range validCoverExtensions {
-			fileToLookFor := directory + string(os.PathSeparator) + name + ext
-			if fileExists(fileToLookFor) {
-				fileContent, errRead := ioutil.ReadFile(fileToLookFor)
-				if errRead == nil {
-					reader := bytes.NewReader(fileContent)
-					hash, errSum := md5Checksum(reader)
-					if errSum == nil {
-						cover.Ext = ext
-						cover.Hash = hash
-						cover.Content = fileContent
-
-						return cover, nil
-					}
+					return cover, nil
 				}
 			}
 		}
 	}
 
-	return cover, errors.New("no cover found in folder")
+	return cover, errors.New("invalid cover image file")
+}
+
+func isValidCoverFile(filename string) bool {
+	for _, name := range validCoverNames {
+		for _, ext := range validCoverExtensions {
+			if matched, _ := filepath.Match(name + ext, strings.ToLower(filename)); matched {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 // Get media cover from media file metadata.
 //
 // Returns cover info if found.
-func getMediaCoverFromMetadata(mediaPath string) (cover domain.Cover, err error) {
-	metadata, errMeta := getMetadataFromFile(mediaPath)
-	if errMeta == nil && metadata.Picture != nil {
-		reader := bytes.NewReader(metadata.Picture.Data)
+func getMediaCoverFromTrackMetadata(trackMetadata mediaMetadata) (cover domain.Cover, err error) {
+	if trackMetadata.Picture != nil {
+		reader := bytes.NewReader(trackMetadata.Picture.Data)
 		hash, errSum := md5Checksum(reader)
 		if errSum == nil {
 			// TODO Change this "hack".
-			if metadata.Picture.Ext == "" {
+			if trackMetadata.Picture.Ext == "" {
 				cover.Ext = ".jpg"
 			} else {
-				cover.Ext = "." + metadata.Picture.Ext
+				cover.Ext = "." + trackMetadata.Picture.Ext
 			}
 			cover.Hash = hash
-			cover.Content = metadata.Picture.Data
+			cover.Content = trackMetadata.Picture.Data
 
 			return
 		}
 	}
 
-	return cover, errors.New("no cover found in metadata")
+	return cover, errors.New("no cover found in track metadata")
 }
 
 // Writes a cover image to disk.
 func writeCoverFile(file *domain.Cover, directory string) error {
 	if _, err := os.Stat(directory); os.IsNotExist(err) {
-		os.MkdirAll(directory, 0755)
+		os.MkdirAll(directory, 0777)
 	}
 
 	destFileName := directory + string(os.PathSeparator) + file.Hash + file.Ext
-	return ioutil.WriteFile(destFileName, file.Content, 755)
+	return ioutil.WriteFile(destFileName, file.Content, 0777)
 }
 
 // Checks if a file exists on disk.
@@ -527,4 +532,13 @@ func md5Checksum(reader io.Reader) (hash string, err error) {
 // Removes spaces and nul character from a string.
 func sanitizeString(s string) string {
 	return strings.Trim(strings.TrimSpace(s), "\x00")
+}
+
+func arrayContains(arr []string, str string) bool {
+	for _, a := range arr {
+		if a == str {
+			return true
+		}
+	}
+	return false
 }

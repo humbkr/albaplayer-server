@@ -103,6 +103,17 @@ var albumType = graphql.NewObject(graphql.ObjectConfig{
 				return nil, nil
 			},
 		},
+		"cover": &graphql.Field{
+			Name: "Album cover",
+			Description: "Url of the cover file.",
+			Type: graphql.String,
+			Resolve: func (p graphql.ResolveParams) (interface{}, error) {
+				if album, ok := p.Source.(domain.Album); ok == true && album.CoverId != 0 {
+					return "/covers/" + strconv.Itoa(album.CoverId), nil
+				}
+				return nil, nil
+			},
+		},
 		"artistId": &graphql.Field{
 			Name: "Artist ID",
 			Description: "Shorthand property for performance, avoid loading an artist for each album.",
@@ -214,12 +225,22 @@ var trackType = graphql.NewObject(graphql.ObjectConfig{
 		},
 		"src": &graphql.Field{
 			Name: "Track path",
-			Description: "Localisation of the media file on the server.",
+			Description: "Url of the media file.",
 			Type: graphql.NewNonNull(graphql.String),
 			Resolve: func (p graphql.ResolveParams) (interface{}, error) {
 				if track, ok := p.Source.(domain.Track); ok == true {
-					// TODO write a function to stream the file.
-					return track.Path, nil
+					return "/stream/" + strconv.Itoa(track.Id), nil
+				}
+				return nil, nil
+			},
+		},
+		"cover": &graphql.Field{
+			Name: "Track cover",
+			Description: "Url of the cover file.",
+			Type: graphql.String,
+			Resolve: func (p graphql.ResolveParams) (interface{}, error) {
+				if track, ok := p.Source.(domain.Track); ok == true && track.CoverId != 0 {
+					return "/covers/" + strconv.Itoa(track.CoverId), nil
 				}
 				return nil, nil
 			},
@@ -329,7 +350,6 @@ func NewGraphQLInteractor(ci *business.LibraryInteractor) *graphQLInteractor {
 			return nil, nil
 		},
 	})
-
 	trackType.AddFieldConfig("artist", &graphql.Field{
 		Type: artistType,
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
@@ -345,21 +365,6 @@ func NewGraphQLInteractor(ci *business.LibraryInteractor) *graphQLInteractor {
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 			if track, ok := p.Source.(domain.Track); ok == true && track.AlbumId != 0 {
 				return interactor.Library.AlbumRepository.Get(track.AlbumId)
-			}
-
-			return nil, nil
-		},
-	})
-	trackType.AddFieldConfig("cover", &graphql.Field{
-		Name: "Track cover",
-		Description: "Localisation of the cover file on the computer.",
-		Type: graphql.String,
-		Resolve: func (p graphql.ResolveParams) (interface{}, error) {
-			if track, ok := p.Source.(domain.Track); ok == true && track.CoverId != 0 {
-					cover, err := interactor.Library.CoverRepository.Get(track.CoverId)
-					if err == nil {
-						return cover.Path, nil
-					}
 			}
 
 			return nil, nil

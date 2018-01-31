@@ -3,7 +3,7 @@ DB:
     Driver: sqlite3
     File: ./alba.db
 Covers:
-    Directory: ./covers
+    Directory: ./tmp/alba_covers
     #Directory: C:\Users\humbk\Pictures\alba_covers
 
 # Logging system.
@@ -18,6 +18,9 @@ Server:
 # Library configuration.
 Library:
     #Folder: C:\Users\humbk\Music\alba-player\media
-    Folder: /Users/julien/Music/tmp/alba
+    Folder: ./tmp/whatev
     # Preferred source for media cover image ("tag" or "file")
     CoverPreferredSource: file
+
+DevMode:
+    Enabled: true

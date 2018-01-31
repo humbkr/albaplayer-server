@@ -5,6 +5,7 @@ type Album struct {
 	Title    string `db:"title"` // Mandatory.
 	Year     string `db:"year"`
 	ArtistId int    `db:"artist_id"`
+	CoverId  int    `db:"cover_id"`
 	Tracks   Tracks	`db:"-"`
 }
 

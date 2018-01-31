@@ -8,6 +8,8 @@
 alba.db
 app.log
 /covers
+/tmp
+/alba-player
 
 # Dependencies
 vendor

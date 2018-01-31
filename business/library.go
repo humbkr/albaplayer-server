@@ -4,7 +4,6 @@ import (
 	"git.humbkr.com/jgalletta/alba-player/domain"
 	"github.com/spf13/viper"
 	"errors"
-	"log"
 )
 
 const CoverPreferredSourceImgFile = "file"
@@ -253,7 +252,6 @@ func (interactor LibraryInteractor) UpdateLibrary() {
 
 // TODO How to unit test this?
 func (interactor LibraryInteractor) EraseLibrary() {
-	log.Println("Erase library")
 	interactor.LibraryRepository.Erase()
 	interactor.MediaFileRepository.DeleteCovers()
 
