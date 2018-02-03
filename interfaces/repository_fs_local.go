@@ -7,7 +7,6 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
-	"math"
 	"os"
 	"path"
 	"path/filepath"
@@ -16,7 +15,6 @@ import (
 	"git.humbkr.com/jgalletta/alba-player/business"
 	"git.humbkr.com/jgalletta/alba-player/domain"
 	"github.com/dhowden/tag"
-	mp3info "github.com/xhenner/mp3-go"
 	"strings"
 	"log"
 	"github.com/go-gorp/gorp"
@@ -425,14 +423,6 @@ func getMetadataFromFile(filePath string) (info mediaMetadata, err error) {
 		extension := filepath.Ext(f)
 		filename := filepath.Base(f)
 		info.Title = filename[0 : len(filename) - len(extension)]
-	}
-
-	// If the file is an mp3, get some more info.
-	if strings.ToLower(filepath.Ext(filePath)) == ".mp3" {
-		mp3Info, err := mp3info.Examine(filePath, true)
-		if err == nil {
-			info.Duration = int(math.Floor(mp3Info.Length + .5))
-		}
 	}
 
 	// Set the filepath.
