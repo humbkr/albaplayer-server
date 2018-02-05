@@ -3,7 +3,6 @@ package interfaces
 import (
 	"errors"
 	"git.humbkr.com/jgalletta/alba-player/domain"
-	"git.humbkr.com/jgalletta/alba-player/business"
 )
 
 type AlbumDbRepository struct {
@@ -31,37 +30,35 @@ Fetches all albums from the database.
 @param hydrate
 	If true populate albums tracks. WARNING: VERY time consuming
 */
-func (ar AlbumDbRepository) GetAll(hydrate bool) (entities []business.AlbumView, err error) {
+func (ar AlbumDbRepository) GetAll(hydrate bool) (entities domain.Albums, err error) {
 	if !hydrate {
-		query := "SELECT alb.*, COALESCE(art.name, '') ArtistName " +
-			     "FROM albums alb LEFT JOIN artists art ON alb.artist_id = art.id"
+		query := "SELECT * FROM albums"
 		_, err = ar.AppContext.DB.Select(&entities, query)
 
 	} else {
 		type gorpResult struct {
-			business.AlbumView
+			albumId int
+			albumTitle string
+			albumYear string
+			albumArtistId int
 			domain.Track
-			TrackId int
-			TrackTitle string
-			TrackArtistId int
-			TrackCoverId int
 		}
 		var results []gorpResult
 
-		query := "SELECT alb.*, trk.Id TrackId, trk.Title TrackTitle, trk.artist_id TrackArtistId, trk.cover_id TrackCoverId, trk.disc , trk.number , trk.duration , trk.genre, trk.path " +
+		query := "SELECT alb.Id albumId, alb.Title albumTitle, alb.Year albumYeat, alb.ArtistId albumArtistId, trk.* " +
 			     "FROM albums alb JOIN tracks trk ON alb.id = trk.album_id"
 
 		_, err = ar.AppContext.DB.Select(&results, query)
 		if err == nil {
 			// Deduplicate stuff.
-			var current business.AlbumView
+			var current domain.Album
 			for _, r := range results {
 				track := domain.Track{
-					Id: r.TrackId,
-					Title: r.TrackTitle,
-					AlbumId: r.Id,
-					ArtistId: r.TrackArtistId,
-					CoverId: r.TrackCoverId,
+					Id: r.Id,
+					Title: r.Title,
+					AlbumId: r.albumId,
+					ArtistId: r.ArtistId,
+					CoverId: r.CoverId,
 					Disc: r.Disc,
 					Number: r.Number,
 					Duration: r.Duration,
@@ -70,24 +67,20 @@ func (ar AlbumDbRepository) GetAll(hydrate bool) (entities []business.AlbumView,
 				}
 
 				if current.Id == 0 {
-					// Create a new AlbumView.
-					current = business.AlbumView{
-						Album: domain.Album{Id: r.Id,
-							Title: r.Title,
-							Year: r.Year,
-							ArtistId: r.ArtistId,
-						},
+					current = domain.Album{
+						Id: r.albumId,
+						Title: r.albumTitle,
+						Year: r.albumYear,
+						ArtistId: r.albumArtistId,
 					}
 				} else if r.Id != current.Id {
-					// Put the current AlbumView in the results list.
 					entities = append(entities, current)
-					// Then change the current AlbumView
-					current = business.AlbumView{
-						Album: domain.Album{Id: r.Id,
-							Title: r.Title,
-							Year: r.Year,
-							ArtistId: r.ArtistId,
-						},
+					// Then change the current album
+					current = domain.Album{
+						Id: r.albumId,
+						Title: r.albumTitle,
+						Year: r.albumYear,
+						ArtistId: r.albumArtistId,
 					}
 				}
 				current.Tracks = append(current.Tracks, track)

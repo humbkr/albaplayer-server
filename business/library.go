@@ -73,7 +73,7 @@ func (interactor LibraryInteractor) GetAlbum(albumId int) (domain.Album, error) 
 // Gets all albums.
 //
 // If no albums found, returns an empty collection.
-func (interactor LibraryInteractor) GetAllAlbums(hydrate bool) ([]AlbumView, error) {
+func (interactor LibraryInteractor) GetAllAlbums(hydrate bool) (domain.Albums, error) {
 	return interactor.AlbumRepository.GetAll(hydrate)
 }
 

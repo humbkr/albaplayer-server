@@ -2,13 +2,6 @@ package business
 
 import "git.humbkr.com/jgalletta/alba-player/domain"
 
-// Album view containing more data useful for the app.
-// This is to limit to the maximum the requests needed to populate objects from DB.
-type AlbumView struct {
-	domain.Album
-	ArtistName 	string
-}
-
 type ArtistRepository interface {
 	// Gets an entity from the datasource.
 	//
@@ -44,7 +37,7 @@ type AlbumRepository interface {
 	// Gets all entities from the datasource.
 	//
 	// If no entities found, returns an empty collection without error.
-	GetAll(hydrate bool) (entities []AlbumView, err error)
+	GetAll(hydrate bool) (entities domain.Albums, err error)
 
 	// Gets an entity based on its name.
 	GetByName(name string, artistId int) (entity domain.Album, err error)
