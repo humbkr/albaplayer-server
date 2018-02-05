@@ -7,7 +7,9 @@ package interfaces
 
 import (
 	"github.com/graphql-go/graphql"
+	"errors"
 	"strconv"
+
 	"git.humbkr.com/jgalletta/alba-player/business"
 	"git.humbkr.com/jgalletta/alba-player/domain"
 )
@@ -254,9 +256,25 @@ var trackType = graphql.NewObject(graphql.ObjectConfig{
 var libraryUpdateStateType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "LibraryUpdateState",
 	Fields: graphql.Fields{
-		"totalTracks": &graphql.Field{
-			Name:        "Number of tracks to process",
-			Description: "Number of tracks to process.",
+		"tracksNumber": &graphql.Field{
+			Name:        "Number of tracks",
+			Description: "Number of tracks in the library.",
+			Type:        graphql.Int,
+			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+				return nil, nil
+			},
+		},
+		"albumsNumber": &graphql.Field{
+			Name:        "Number of albums",
+			Description: "Number of albums in the library.",
+			Type:        graphql.Int,
+			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+				return nil, nil
+			},
+		},
+		"artistsNumber": &graphql.Field{
+			Name:        "Number of artists",
+			Description: "Number of artists in the library.",
 			Type:        graphql.Int,
 			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 				return nil, nil
@@ -392,6 +410,29 @@ func NewGraphQLInteractor(ci *business.LibraryInteractor) *graphQLInteractor {
 					}
 
 					return interactor.Library.TrackRepository.Get(id)
+				},
+			},
+			// TODO: I don't think using a query here is okay.
+			"updateLibrary": &graphql.Field{
+				Type: libraryUpdateStateType,
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					if interactor.Library.LibraryIsUpdating {
+						return nil, errors.New("library currently updating")
+					}
+					interactor.Library.UpdateLibrary()
+
+					return nil, nil
+				},
+			},
+			"eraseLibrary": &graphql.Field{
+				Type: libraryUpdateStateType,
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					if interactor.Library.LibraryIsUpdating {
+						return nil, errors.New("library currently updating")
+					}
+					interactor.Library.EraseLibrary()
+
+					return nil, nil
 				},
 			},
 		},

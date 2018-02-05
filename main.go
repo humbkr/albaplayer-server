@@ -6,11 +6,12 @@ import (
 
 	"git.humbkr.com/jgalletta/alba-player/business"
 	"git.humbkr.com/jgalletta/alba-player/interfaces"
+	"github.com/mnmtanish/go-graphiql"
 	"github.com/natefinch/lumberjack"
 	"github.com/spf13/viper"
 	"net/http"
 	gqlHandler "github.com/graphql-go/handler"
-	"github.com/mnmtanish/go-graphiql"
+	//"github.com/mnmtanish/go-graphiql"
 	"github.com/rs/cors"
 )
 
@@ -41,7 +42,7 @@ func main() {
 	appContext.DB = datasource
 
 	// Instanciate all we need to work on the media library.
-	libraryInteractor := new(business.LibraryInteractor)
+	libraryInteractor := business.LibraryInteractor{}
 	libraryInteractor.ArtistRepository = interfaces.ArtistDbRepository{AppContext: &appContext}
 	libraryInteractor.AlbumRepository = interfaces.AlbumDbRepository{AppContext: &appContext}
 	libraryInteractor.TrackRepository = interfaces.TrackDbRepository{AppContext: &appContext}
@@ -50,20 +51,17 @@ func main() {
 	libraryInteractor.MediaFileRepository = interfaces.LocalFilesystemRepository{AppContext: &appContext}
 
 	// STUB: instanciate the database for tests.
+/*
 	libraryInteractor.EraseLibrary()
+	t := time.Now()
+	fmt.Println(t.Format("15:04:05"))
 	libraryInteractor.UpdateLibrary()
-
-
-	// Instanciate the main Queue.
-	// TODO warning, only works for one user.
-	//queue := business.GetQueueInstance()
-	//queue.Library = libraryInteractor
-
-
-	//queue.AppendAlbum(1)
+	t2 := time.Now()
+	fmt.Println(t2.Format("15:04:05"))
+*/
 
 	// Initialize GraphQL stuff.
-	graphQLInteractor := interfaces.NewGraphQLInteractor(libraryInteractor)
+	graphQLInteractor := interfaces.NewGraphQLInteractor(&libraryInteractor)
 
 	// Create a graphl-go HTTP handler with our previously defined schema
 	// and set it to return pretty JSON output.
@@ -78,12 +76,12 @@ func main() {
 
 	// Serve media files streaming endpoint.
 	// Makes the server handle cross-domain requests.
-	mediaFilesHandler := interfaces.NewMediaStreamHandler(libraryInteractor)
+	mediaFilesHandler := interfaces.NewMediaStreamHandler(&libraryInteractor)
 	http.Handle("/stream/", http.StripPrefix("/stream/", cors.Default().Handler(mediaFilesHandler)))
 
 	// Serve media files streaming endpoint.
 	// Makes the server handle cross-domain requests.
-	coverFilesHandler := interfaces.NewCoverStreamHandler(libraryInteractor)
+	coverFilesHandler := interfaces.NewCoverStreamHandler(&libraryInteractor)
 	http.Handle("/covers/", http.StripPrefix("/covers/", cors.Default().Handler(coverFilesHandler)))
 
     if viper.GetBool("DevMode.Enabled") {
