@@ -7,8 +7,10 @@
 # Application
 alba.db
 app.log
-/covers
 /tmp
+/build/linux
+/build/macos
+/build/windows
 /alba-player
 
 # Dependencies

@@ -9,7 +9,7 @@ up:
 	$(DOCKER_COMPOSE_CMD) up -d
 
 down:
-	$(DOCKER_COMPOSE_CMD) stop
+	$(DOCKER_COMPOSE_CMD) down
 
 stop:
 	$(DOCKER_COMPOSE_CMD) stop

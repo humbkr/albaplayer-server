@@ -5,7 +5,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/stretchr/testify/assert"
 	"log"
-	"git.humbkr.com/jgalletta/alba-player/domain"
+	"git.humbkr.com/jgalletta/alba-player/internal/alba/domain"
 )
 
 type CoverRepoTestSuite struct {

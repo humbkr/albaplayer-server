@@ -1,7 +1,14 @@
-FROM golang:1.9
+FROM dockercore/golang-cross:latest
 
-# Install utils
-RUN alias ll="ls -alh"
+
+RUN apt-get update
+
+# Vim
+RUN apt-get install -y vim
+
+# Create aliases
+RUN echo 'alias ll="ls -lah"' >> ~/.bashrc
+RUN echo 'alias vi="vim"' >> ~/.bashrc
 
 # Set go bin which doesn't appear to be set already
 ENV GOBIN /go/bin

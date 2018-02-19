@@ -1,5 +1,4 @@
-/**
-@file
+/*
 Defines and initialize the GraphQL schema.
  */
 
@@ -10,8 +9,8 @@ import (
 	"errors"
 	"strconv"
 
-	"git.humbkr.com/jgalletta/alba-player/business"
-	"git.humbkr.com/jgalletta/alba-player/domain"
+	"git.humbkr.com/jgalletta/alba-player/internal/alba/business"
+	"git.humbkr.com/jgalletta/alba-player/internal/alba/domain"
 )
 
 type graphQLInteractor struct {

@@ -3,7 +3,7 @@ package interfaces
 import (
 	"errors"
 
-	"git.humbkr.com/jgalletta/alba-player/domain"
+	"git.humbkr.com/jgalletta/alba-player/internal/alba/domain"
 )
 
 type ArtistDbRepository struct {

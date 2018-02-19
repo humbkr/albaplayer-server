@@ -1,14 +1,14 @@
 package business
 
 import (
-	"git.humbkr.com/jgalletta/alba-player/domain"
+	"git.humbkr.com/jgalletta/alba-player/internal/alba/domain"
 	"github.com/spf13/viper"
 	"errors"
 	"sync"
 )
 
-const CoverPreferredSourceImgFile = "file"
-const CoverPreferredSourceMeta = "tag"
+const CoverPreferredSourceFolder = "folder"
+const CoverPreferredSourceMediaFile = "file"
 const LibraryDefaultArtist = "Unknown artist"
 const LibraryDefaultAlbum = "Unknown album"
 const LibraryDefaultCompilationArtist = "Various artists"
@@ -254,7 +254,7 @@ func (interactor *LibraryInteractor) UpdateLibrary() {
 	interactor.mutex.Lock()
 	interactor.LibraryIsUpdating = true
 
-	interactor.MediaFileRepository.ScanMediaFiles(viper.GetString("Library.Folder"))
+	interactor.MediaFileRepository.ScanMediaFiles(viper.GetString("Library.Path"))
 
 	interactor.LibraryIsUpdating = false
 	interactor.mutex.Unlock()

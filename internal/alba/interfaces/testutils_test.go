@@ -2,14 +2,14 @@ package interfaces
 
 import (
 	"database/sql"
-	"git.humbkr.com/jgalletta/alba-player/domain"
+	"git.humbkr.com/jgalletta/alba-player/internal/alba/domain"
 	"log"
 	"github.com/go-gorp/gorp"
 	_ "github.com/mattn/go-sqlite3"
 	"encoding/csv"
 	"os"
 	"io"
-	"git.humbkr.com/jgalletta/alba-player/business"
+	"git.humbkr.com/jgalletta/alba-player/internal/alba/business"
 	"github.com/stretchr/testify/mock"
 	"errors"
 	"math/rand"
@@ -22,7 +22,7 @@ import (
 Common stuff for repositories tests.
  */
 
-const TestDataDir = "../test_data/"
+const TestDataDir = "../../test/"
 const TestDatasourceFile = "test.db"
 const TestArtistsFile = TestDataDir + "artists.csv"
 const TestAlbumsFile = TestDataDir + "albums.csv"

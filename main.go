@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"git.humbkr.com/jgalletta/alba-player/business"
-	"git.humbkr.com/jgalletta/alba-player/interfaces"
+	"git.humbkr.com/jgalletta/alba-player/internal/alba/business"
+	"git.humbkr.com/jgalletta/alba-player/internal/alba/interfaces"
 	"github.com/mnmtanish/go-graphiql"
 	"github.com/natefinch/lumberjack"
 	"github.com/spf13/viper"
@@ -16,7 +16,26 @@ import (
 )
 
 func main() {
-	// Load app configuration.
+	// Set default configuration.
+	// Database.
+	viper.SetDefault("DB.Driver", "sqlite3")
+	viper.SetDefault("DB.File", "./alba.db")
+	// Covers.
+	viper.SetDefault("Covers.Directory", "./covers")
+	viper.SetDefault("Covers.PreferredSource", "folder")
+	// Logging.
+	viper.SetDefault("Log.Enabled", true)
+	viper.SetDefault("Log.File", "app.log")
+	viper.SetDefault("Log.Path", "./")
+	// Webserver.
+	viper.SetDefault("Server.Port", "8888")
+	// Library.
+	viper.SetDefault("Library.Path", "")
+	// Dev mode.
+	viper.SetDefault("DevMode.Enabled", false)
+
+
+	// Load app configuration from file.
 	viper.SetConfigName("alba")
 	viper.AddConfigPath("./")
 
@@ -51,14 +70,8 @@ func main() {
 	libraryInteractor.MediaFileRepository = interfaces.LocalFilesystemRepository{AppContext: &appContext}
 
 	// STUB: instanciate the database for tests.
-/*
-	libraryInteractor.EraseLibrary()
-	t := time.Now()
-	fmt.Println(t.Format("15:04:05"))
-	libraryInteractor.UpdateLibrary()
-	t2 := time.Now()
-	fmt.Println(t2.Format("15:04:05"))
-*/
+	// libraryInteractor.EraseLibrary()
+	// libraryInteractor.UpdateLibrary()
 
 	// Initialize GraphQL stuff.
 	graphQLInteractor := interfaces.NewGraphQLInteractor(&libraryInteractor)

@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"git.humbkr.com/jgalletta/alba-player/business"
-	"git.humbkr.com/jgalletta/alba-player/domain"
+	"git.humbkr.com/jgalletta/alba-player/internal/alba/business"
+	"git.humbkr.com/jgalletta/alba-player/internal/alba/domain"
 	"github.com/dhowden/tag"
 	"strings"
 	"log"
@@ -192,7 +192,7 @@ func processMediaFiles(mediaFiles map[string][]mediaMetadata, cover string, dbTr
 			// Find out what cover we can set to the track based on config preferences.
 			// Default to the one we may have found previously in the folder if there is tracks from one album only.
 			var trackCoverId = albumCoverId
-			if viper.GetString("Library.CoverPreferredSource") == business.CoverPreferredSourceMeta {
+			if viper.GetString("Covers.PreferredSource") == business.CoverPreferredSourceMediaFile {
 				// Track metadata has priority, so try to find a cover in metadata.
 				trackCover, err := getMediaCoverFromTrackMetadata(metadataTrack)
 				if err == nil {

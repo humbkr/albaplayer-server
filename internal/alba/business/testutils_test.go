@@ -1,7 +1,7 @@
 package business
 
 import (
-	"git.humbkr.com/jgalletta/alba-player/domain"
+	"git.humbkr.com/jgalletta/alba-player/internal/alba/domain"
 	"github.com/stretchr/testify/mock"
 	"errors"
 	"strconv"
