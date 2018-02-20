@@ -19,12 +19,24 @@ func createMockLibraryInteractor() (*LibraryInteractor) {
 	interactor.ArtistRepository = new(ArtistRepositoryMock)
 	interactor.AlbumRepository = new(AlbumRepositoryMock)
 	interactor.TrackRepository = new(TrackRepositoryMock)
+	interactor.CoverRepository = new(CoverRepositoryMock)
+	interactor.MediaFileRepository = new(MediaFileRepositoryMock)
+	interactor.LibraryRepository = new(LibraryRepositoryMock)
 
 	return interactor
 }
 
-/* Mock for artist repository. */
+/*
+Mock for library repository.
+*/
+type LibraryRepositoryMock struct{
+	mock.Mock
+}
+func (m LibraryRepositoryMock) Erase() {}
 
+/*
+Mock for artist repository.
+*/
 type ArtistRepositoryMock struct{
 	mock.Mock
 }
@@ -151,15 +163,12 @@ func (m *AlbumRepositoryMock) Get(id int) (entity domain.Album, err error) {
 }
 
 // Returns 3 albums.
-func (m *AlbumRepositoryMock) GetAll(hydrate bool) (entities []AlbumView, err error) {
+func (m *AlbumRepositoryMock) GetAll(hydrate bool) (entities domain.Albums, err error) {
 	for i := 1; i < 4; i++ {
-		album := AlbumView{
-			Album: domain.Album{
-				Id:    i,
-				Title: "Album #" + strconv.Itoa(i),
-				Year:  "2017",
-			},
-			ArtistName: "Artist for album #" + strconv.Itoa(i),
+		album := domain.Album{
+			Id:    i,
+			Title: "Album #" + strconv.Itoa(i),
+			Year:  "2017",
 		}
 
 		if hydrate {
@@ -198,10 +207,7 @@ func (m *AlbumRepositoryMock) GetByName(name string, artistId int) (entity domai
 // Returns album for artistId 1, else no albums.
 func (m *AlbumRepositoryMock) GetAlbumsForArtist(artistId int, hydrate bool) (entities domain.Albums, err error) {
 	if artistId == 1 {
-		albumViews, _ := m.GetAll(hydrate)
-		for _, val := range albumViews {
-			entities = append(entities, val.Album)
-		}
+		entities, _ = m.GetAll(hydrate)
 
 		for idx, val := range entities {
 			entities[idx].ArtistId = 1
@@ -265,13 +271,15 @@ func (m *TrackRepositoryMock) Get(id int) (entity domain.Track, err error) {
 // Returns 3 tracks.
 func (m *TrackRepositoryMock) GetAll() (entities domain.Tracks, err error) {
 	for i := 1; i < 4; i++ {
-		album := domain.Track{
+		track := domain.Track{
 			Id: i,
 			Title: "Track #" + strconv.Itoa(i),
 			Path: fmt.Sprintf("/music/Track %v.mp3", i),
+			AlbumId: i,
+			ArtistId: i,
 		}
 
-		entities = append(entities, album)
+		entities = append(entities, track)
 	}
 
 	return
@@ -325,4 +333,82 @@ func (m *TrackRepositoryMock) Delete(entity *domain.Track) (err error) {
 // Returns true if id == 1, else false.
 func (m TrackRepositoryMock) Exists(id int) bool {
 	return id == 1
+}
+
+
+/*
+Mock for cover repository.
+*/
+type CoverRepositoryMock struct{
+	mock.Mock
+}
+
+// Returns a valid response for any id inferior or equals to 10, else an error.*/
+func (m *CoverRepositoryMock) Get(id int) (entity domain.Cover, err error) {
+	if id < 10 {
+		entity.Id = id
+		entity.Path = "/path/to/cover.jpg"
+		entity.Hash = "8f338837a96141e96d663b67e464648e"
+
+		return
+	}
+
+	// Else return an error.
+	err = errors.New("not found")
+	return
+}
+
+// Never fails.
+func (m *CoverRepositoryMock) Save(entity *domain.Cover) (err error) {
+	if entity.Id != 0 {
+		// This is an update, do nothing.
+		return
+	}
+
+	// Else this is a new entity, fill the Id.
+	entity.Id = rand.Intn(50)
+	return
+}
+
+
+// Never fails.
+func (m *CoverRepositoryMock) Delete(entity *domain.Cover) (err error) {
+	return
+}
+
+// Returns true if id == 1, else false.
+func (m *CoverRepositoryMock) Exists(id int) bool {
+	return id == 1
+}
+
+// Returns 1 if hash == 8f338837a96141e96d663b67e464648e, else 0.
+func (m *CoverRepositoryMock) ExistsByHash(hash string) int {
+	if hash == "8f338837a96141e96d663b67e464648e" {
+		return 1
+	}
+
+	return 0
+}
+
+/*
+Mock for media file repository.
+*/
+type MediaFileRepositoryMock struct{
+	mock.Mock
+}
+
+func (m *MediaFileRepositoryMock) ScanMediaFiles(path string) (int, int) { return 0, 0 }
+func (m *MediaFileRepositoryMock) WriteCoverFile(file *domain.Cover, directory string) error { return nil }
+func (m *MediaFileRepositoryMock) RemoveCoverFile(file *domain.Cover, directory string) error { return nil }
+func (m *MediaFileRepositoryMock) DeleteCovers() error { return nil }
+
+// Returns false except for paths of the 2 first tracks returned by trackRepoMock getAll().
+func (m *MediaFileRepositoryMock) MediaFileExists(filepath string) bool {
+	for i := 1; i < 3; i++ {
+		if filepath == fmt.Sprintf("/music/Track %v.mp3", i) {
+			return true
+		}
+	}
+
+	return false
 }

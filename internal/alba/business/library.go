@@ -209,6 +209,21 @@ func (interactor *LibraryInteractor) TrackExists(trackId int) bool {
 
 // Saves a cover.
 func (interactor *LibraryInteractor) SaveCover(cover *domain.Cover) error {
+	invalid := false
+	var message string
+	if cover.Hash == "" {
+		invalid = true
+		message = "cannot save cover: empty hash"
+	}
+	if cover.Path == "" {
+		invalid = true
+		message = "cannot save cover: empty path"
+	}
+
+	if invalid {
+		return errors.New(message)
+	}
+
 	coverId := interactor.CoverHashExists(cover.Hash)
 	if coverId != 0 {
 		// It becomes an update.
@@ -227,10 +242,14 @@ func (interactor *LibraryInteractor) SaveCover(cover *domain.Cover) error {
 
 // Deletes a cover.
 func (interactor *LibraryInteractor) DeleteCover(cover *domain.Cover) error {
-	// Save cover info to database.
+	if cover.Id == 0 {
+		return errors.New("cannot delete cover: id not provided")
+	}
+
+	// Delete cover info from database.
 	err := interactor.CoverRepository.Delete(cover)
 	if err == nil {
-		// Save image file.
+		// Remove image file.
 		err = interactor.MediaFileRepository.RemoveCoverFile(cover, viper.GetString("Covers.Directory"))
 	}
 
@@ -249,7 +268,7 @@ func (interactor *LibraryInteractor) CoverHashExists(hash string) int {
 	return interactor.CoverRepository.ExistsByHash(hash)
 }
 
-// TODO How to unit test this?
+// Populates library.
 func (interactor *LibraryInteractor) UpdateLibrary() {
 	interactor.mutex.Lock()
 	interactor.LibraryIsUpdating = true
@@ -260,7 +279,7 @@ func (interactor *LibraryInteractor) UpdateLibrary() {
 	interactor.mutex.Unlock()
 }
 
-// TODO How to unit test this?
+// Removes all data from library.
 func (interactor *LibraryInteractor) EraseLibrary() {
 	interactor.mutex.Lock()
 	interactor.LibraryIsUpdating = true
@@ -278,22 +297,26 @@ func (interactor *LibraryInteractor) EraseLibrary() {
 	interactor.mutex.Unlock()
 }
 
-/**
-Remove all dead files from library.
- */
+// Removes all dead files from library.
 func (interactor *LibraryInteractor) CleanDeadFiles() {
 	// Keep a trace of albums and artists to check after tracks deletion.
-	var relatedAlbums map[int]int
-	var relatedArtists map[int]int
+	relatedAlbums := make(map[int]int)
+	relatedArtists := make(map[int]int)
 
 	tracks, err := interactor.GetAllTracks()
+
 	if err == nil {
 		// Delete non existant tracks.
 		for _, track := range tracks {
 			if !interactor.MediaFileRepository.MediaFileExists(track.Path) {
 				interactor.DeleteTrack(&track)
-				relatedAlbums[track.AlbumId]++
-				relatedArtists[track.ArtistId]++
+
+				if track.AlbumId != 0 {
+					relatedAlbums[track.AlbumId]++
+				}
+				if track.ArtistId != 0 {
+					relatedArtists[track.ArtistId]++
+				}
 			}
 		}
 

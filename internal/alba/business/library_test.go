@@ -297,6 +297,7 @@ func (suite *TrackInteractorTestSuite) TestGetAllTracks() {
 }
 
 func (suite *TrackInteractorTestSuite) TestGetTracksForAlbum() {
+	// Test with valid album id.
 	tracks, err := suite.Library.GetTracksForAlbum(1)
 	assert.Nil(suite.T(), err)
 	assert.NotEmpty(suite.T(), tracks)
@@ -306,6 +307,10 @@ func (suite *TrackInteractorTestSuite) TestGetTracksForAlbum() {
 		assert.NotEmpty(suite.T(), track.Title)
 		assert.NotEmpty(suite.T(), track.Path)
 	}
+
+	// Test with invalid album id.
+	tracks, err = suite.Library.GetTracksForAlbum(54)
+	assert.NotNil(suite.T(), err)
 }
 
 func (suite *TrackInteractorTestSuite) TestSaveTrack() {
@@ -355,7 +360,7 @@ func (suite *TrackInteractorTestSuite) TestSaveTrack() {
 
 	// Test to insert a track with a non existant album id.
 	newTrackInvalidAlbum := &domain.Track{
-		ArtistId:765,
+		AlbumId:765,
 		Title: "Test insert track invalid artist",
 		Path: "/home/test/music/artist test/album test/05 - Insert new track invalid artist.mp3",
 	}
@@ -384,4 +389,132 @@ func (suite *TrackInteractorTestSuite) TestDeleteTrack() {
 	trackNoId := &domain.Track{}
 	errNoId := suite.Library.DeleteTrack(trackNoId)
 	assert.NotNil(suite.T(), errNoId)
+}
+
+func (suite *TrackInteractorTestSuite) TestTrackExists() {
+	// Valid track.
+	exists := suite.Library.TrackExists(1)
+	assert.True(suite.T(), exists)
+
+	// Invalid track.
+	exists = suite.Library.TrackExists(432)
+	assert.False(suite.T(), exists)
+}
+
+
+type CoverInteractorTestSuite struct {
+	suite.Suite
+	// LibraryInteractor where is located what to test.
+	Library *LibraryInteractor
+}
+
+/*
+Go testing framework entry point.
+ */
+func TestCoverRepoTestSuite(t *testing.T) {
+	suite.Run(t, new(CoverInteractorTestSuite))
+}
+
+func (suite *CoverInteractorTestSuite) SetupSuite() {
+	suite.Library = createMockLibraryInteractor()
+}
+
+func (suite *CoverInteractorTestSuite) TestCoverExists() {
+	// Valid cover.
+	exists := suite.Library.CoverExists(1)
+	assert.True(suite.T(), exists)
+
+	// Invalid cover.
+	exists = suite.Library.CoverExists(432)
+	assert.False(suite.T(), exists)
+}
+
+func (suite *CoverInteractorTestSuite) TestCoverHashExists() {
+	// Valid cover.
+	exists := suite.Library.CoverHashExists("8f338837a96141e96d663b67e464648e")
+	assert.Equal(suite.T(), 1, exists)
+
+	// Invalid cover.
+	exists = suite.Library.CoverHashExists("00000837a96141e96d663b67e464648e")
+	assert.Equal(suite.T(), 0, exists)
+}
+
+func (suite *CoverInteractorTestSuite) TestSaveCover() {
+	// Test to save a new cover.
+	newCover := &domain.Cover{
+		Path: "/path/to/cover/8f338837a96141e96d663b67e464648e.jpg",
+		Hash: "8f338837a96141e96d663b67e464648e",
+	}
+
+	err := suite.Library.SaveCover(newCover)
+	assert.Nil(suite.T(), err)
+	assert.NotEmpty(suite.T(), newCover.Id)
+
+	// Test to update the cover.
+	newCover.Path = "/path/to/cover/9f338837a96141e96d663b67e464648e.jpg"
+	newCover.Hash = "9f338837a96141e96d663b67e464648e"
+	errUpdate := suite.Library.SaveCover(newCover)
+	assert.Nil(suite.T(), errUpdate)
+	assert.NotEmpty(suite.T(), newCover.Id)
+
+	// Test to update a cover with an empty hash.
+	newCover.Hash = ""
+	errUpdateEmptyHash := suite.Library.SaveCover(newCover)
+	assert.NotNil(suite.T(), errUpdateEmptyHash)
+
+	// Test to update a cover with an empty path.
+	newCover.Hash = "9f338837a96141e96d663b67e464648e"
+	newCover.Path = ""
+	errUpdateEmptyPath := suite.Library.SaveCover(newCover)
+	assert.NotNil(suite.T(), errUpdateEmptyPath)
+}
+
+func (suite *CoverInteractorTestSuite) TestDeleteCover() {
+	// Delete cover.
+	cover := &domain.Cover{Id: 1}
+	err := suite.Library.DeleteCover(cover)
+	assert.Nil(suite.T(), err)
+
+	// Delete non existant cover.
+	coverFake := &domain.Cover{Id: 55}
+	errFake := suite.Library.DeleteCover(coverFake)
+	assert.Nil(suite.T(), errFake)
+
+	// Try to delete a cover which id is not provided.
+	coverNoId := &domain.Cover{}
+	errNoId := suite.Library.DeleteCover(coverNoId)
+	assert.NotNil(suite.T(), errNoId)
+}
+
+/*
+Following tests are basically useless except for code coverage in case of an exception occurring or something.
+*/
+
+type MediaFilesInteractorTestSuite struct {
+	suite.Suite
+	// LibraryInteractor where is located what to test.
+	Library *LibraryInteractor
+}
+
+/*
+Go testing framework entry point.
+ */
+func TestMediaFilesRepoTestSuite(t *testing.T) {
+	suite.Run(t, new(MediaFilesInteractorTestSuite))
+}
+
+func (suite *MediaFilesInteractorTestSuite) SetupSuite() {
+	suite.Library = createMockLibraryInteractor()
+}
+
+func (suite *MediaFilesInteractorTestSuite) TestUpdateLibrary() {
+	suite.Library.UpdateLibrary()
+}
+
+func (suite *MediaFilesInteractorTestSuite) TestEraseLibrary() {
+	suite.Library.EraseLibrary()
+}
+
+func (suite *MediaFilesInteractorTestSuite) TestCleanDeadFiles() {
+	suite.Library.CleanDeadFiles()
 }
