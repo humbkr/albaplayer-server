@@ -27,12 +27,20 @@ type LibraryInteractor struct {
 	LibraryIsUpdating bool
 }
 
-// Gets an artist from its id.
+// Gets an artist by id.
 //
 // If no artist found, returns an error.
 func (interactor *LibraryInteractor) GetArtist(artistId int) (domain.Artist, error) {
 	return interactor.ArtistRepository.Get(artistId)
 }
+
+// Gets an artist by name.
+//
+// If no artist found, returns an error.
+func (interactor *LibraryInteractor) GetArtistByName(artistName string) (domain.Artist, error) {
+	return interactor.ArtistRepository.GetByName(artistName)
+}
+
 
 // Gets all artists.
 //
@@ -273,6 +281,7 @@ func (interactor *LibraryInteractor) UpdateLibrary() {
 	interactor.mutex.Lock()
 	interactor.LibraryIsUpdating = true
 
+	interactor.CreateCompilationArtist()
 	interactor.MediaFileRepository.ScanMediaFiles(viper.GetString("Library.Path"))
 
 	interactor.LibraryIsUpdating = false
@@ -286,12 +295,6 @@ func (interactor *LibraryInteractor) EraseLibrary() {
 
 	interactor.LibraryRepository.Erase()
 	interactor.MediaFileRepository.DeleteCovers()
-
-	// Initilise library.
-	artist := domain.Artist{
-		Name: LibraryDefaultCompilationArtist,
-	}
-	interactor.ArtistRepository.Save(&artist)
 
 	interactor.LibraryIsUpdating = false
 	interactor.mutex.Unlock()
@@ -336,4 +339,15 @@ func (interactor *LibraryInteractor) CleanDeadFiles() {
 			}
 		}
 	}
+}
+
+// Create a common artist for compilations.
+func (interactor *LibraryInteractor) CreateCompilationArtist() error {
+	_, err := interactor.GetArtistByName(LibraryDefaultCompilationArtist)
+	if err != nil {
+		compilationArtist := domain.Artist{Name: LibraryDefaultCompilationArtist}
+		return interactor.SaveArtist(&compilationArtist)
+	}
+
+	return nil
 }

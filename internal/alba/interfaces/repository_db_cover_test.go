@@ -109,3 +109,23 @@ func (suite *CoverRepoTestSuite) TestDelete() {
 	_, err = suite.CoverRepository.Get(coverId)
 	assert.NotNil(suite.T(), err)
 }
+
+func (suite *CoverRepoTestSuite) TestExists() {
+	// Test with existing data.
+	exists := suite.CoverRepository.Exists(1)
+	assert.True(suite.T(), exists)
+
+	// Test with non existing data.
+	exists = suite.CoverRepository.Exists(543)
+	assert.False(suite.T(), exists)
+}
+
+func (suite *CoverRepoTestSuite) TestExistsByHash() {
+	// Test with existing data.
+	coverId := suite.CoverRepository.ExistsByHash("88affd1fe3b0f3624550b36963b76f65")
+	assert.Equal(suite.T(), 1, coverId)
+
+	// Test with non existing data.
+	coverId = suite.CoverRepository.ExistsByHash("00000d1fe3b0f3624550b36963b76f65")
+	assert.Equal(suite.T(), 0, coverId)
+}

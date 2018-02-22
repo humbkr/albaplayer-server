@@ -36,8 +36,6 @@ func (ar CoverDbRepository) Save(entity *domain.Cover) (err error) {
 		err = ar.AppContext.DB.Insert(entity)
 		return
 	}
-
-	return nil
 }
 
 

@@ -194,3 +194,13 @@ func (suite *TrackRepoTestSuite) TestDelete() {
 	_, err = suite.TrackRepository.Get(trackId)
 	assert.NotNil(suite.T(), err)
 }
+
+func (suite *TrackRepoTestSuite) TestExists() {
+	// Test with existing data.
+	exists := suite.TrackRepository.Exists(1)
+	assert.True(suite.T(), exists)
+
+	// Test with non existing data.
+	exists = suite.TrackRepository.Exists(543)
+	assert.False(suite.T(), exists)
+}

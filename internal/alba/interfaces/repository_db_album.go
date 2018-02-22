@@ -2,6 +2,7 @@ package interfaces
 
 import (
 	"errors"
+
 	"git.humbkr.com/jgalletta/alba-player/internal/alba/domain"
 )
 
@@ -32,21 +33,25 @@ Fetches all albums from the database.
 */
 func (ar AlbumDbRepository) GetAll(hydrate bool) (entities domain.Albums, err error) {
 	if !hydrate {
-		query := "SELECT * FROM albums"
+		query := "SELECT id, title, year, artist_id, cover_id FROM albums"
 		_, err = ar.AppContext.DB.Select(&entities, query)
 
 	} else {
 		type gorpResult struct {
-			albumId int
-			albumTitle string
-			albumYear string
-			albumArtistId int
+			AlbumId int
+			AlbumTitle string
+			AlbumYear string
+			AlbumArtistId int
 			domain.Track
+			// Cannot select domain.album.ArtistId or domain.track.AlbumId because of a Gorp error...
+			// So we have to join on trk.album_id, but then Gorp cannot do the mapping with gorpResult, so we have
+			// to add this property in the struct. TODO get rid of gorp.
+			Album_id int
 		}
 		var results []gorpResult
 
-		query := "SELECT alb.Id albumId, alb.Title albumTitle, alb.Year albumYeat, alb.ArtistId albumArtistId, trk.* " +
-			     "FROM albums alb JOIN tracks trk ON alb.id = trk.album_id"
+		query := "SELECT alb.Id AlbumId, alb.Title AlbumTitle, alb.Year AlbumYear, alb.artist_id AlbumArtistId, trk.* " +
+			     "FROM albums alb, tracks trk WHERE alb.id = trk.album_id"
 
 		_, err = ar.AppContext.DB.Select(&results, query)
 		if err == nil {
@@ -56,7 +61,7 @@ func (ar AlbumDbRepository) GetAll(hydrate bool) (entities domain.Albums, err er
 				track := domain.Track{
 					Id: r.Id,
 					Title: r.Title,
-					AlbumId: r.albumId,
+					AlbumId: r.AlbumId,
 					ArtistId: r.ArtistId,
 					CoverId: r.CoverId,
 					Disc: r.Disc,
@@ -68,19 +73,19 @@ func (ar AlbumDbRepository) GetAll(hydrate bool) (entities domain.Albums, err er
 
 				if current.Id == 0 {
 					current = domain.Album{
-						Id: r.albumId,
-						Title: r.albumTitle,
-						Year: r.albumYear,
-						ArtistId: r.albumArtistId,
+						Id: r.AlbumId,
+						Title: r.AlbumTitle,
+						Year: r.AlbumYear,
+						ArtistId: r.AlbumArtistId,
 					}
 				} else if r.Id != current.Id {
 					entities = append(entities, current)
 					// Then change the current album
 					current = domain.Album{
-						Id: r.albumId,
-						Title: r.albumTitle,
-						Year: r.albumYear,
-						ArtistId: r.albumArtistId,
+						Id: r.AlbumId,
+						Title: r.AlbumTitle,
+						Year: r.AlbumYear,
+						ArtistId: r.AlbumArtistId,
 					}
 				}
 				current.Tracks = append(current.Tracks, track)
@@ -91,7 +96,7 @@ func (ar AlbumDbRepository) GetAll(hydrate bool) (entities domain.Albums, err er
 	return
 }
 
-/**
+/*
 Fetches an album from database.
 */
 func (ar AlbumDbRepository) GetByName(name string, artistId int) (entity domain.Album, err error) {
@@ -109,7 +114,7 @@ func (ar AlbumDbRepository) GetByName(name string, artistId int) (entity domain.
 	return
 }
 
-/**
+/*
 Fetches albums having the specified artistId from database ordered by year.
 */
 func (ar AlbumDbRepository) GetAlbumsForArtist(artistId int, hydrate bool) (entities domain.Albums, err error) {
@@ -123,7 +128,7 @@ func (ar AlbumDbRepository) GetAlbumsForArtist(artistId int, hydrate bool) (enti
 	return
 }
 
-/**
+/*
 Create or update an album in the Database.
 */
 func (ar AlbumDbRepository) Save(entity *domain.Album) (err error) {
@@ -136,11 +141,9 @@ func (ar AlbumDbRepository) Save(entity *domain.Album) (err error) {
 		err = ar.AppContext.DB.Insert(entity)
 		return
 	}
-
-	return nil
 }
 
-/**
+/*
 Delete an album from the Database.
 */
 func (ar AlbumDbRepository) Delete(entity *domain.Album) (err error) {

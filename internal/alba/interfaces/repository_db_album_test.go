@@ -175,6 +175,7 @@ func (suite *AlbumRepoTestSuite) TestSave() {
 }
 
 func (suite *AlbumRepoTestSuite) TestDelete() {
+	trackRepo := TrackDbRepository{AppContext: suite.AlbumRepository.AppContext}
 	var albumId = 1
 
 	// Get album to delete.
@@ -190,8 +191,42 @@ func (suite *AlbumRepoTestSuite) TestDelete() {
 	assert.NotNil(suite.T(), err)
 
 	// Check album tracks have been removed too.
-	trackRepo := TrackDbRepository{AppContext: suite.AlbumRepository.AppContext}
 	tracks, err := trackRepo.GetTracksForAlbum(albumId)
 	assert.Nil(suite.T(), err)
 	assert.Empty(suite.T(), tracks)
+
+	// Test with an album object where tracks are not populated.
+	albumId = 2
+
+	// Get album to delete.
+	albumNoTracks, err := suite.AlbumRepository.Get(albumId)
+	assert.Nil(suite.T(), err)
+	assert.NotEmpty(suite.T(), albumNoTracks.Tracks)
+
+	// Remove tracks from object.
+	albumNoTracks.Tracks = domain.Tracks{}
+	assert.Empty(suite.T(), albumNoTracks.Tracks)
+
+	// Delete album.
+	err = suite.AlbumRepository.Delete(&albumNoTracks)
+	assert.Nil(suite.T(), err)
+
+	// Check album has been removed from the database.
+	_, err = suite.AlbumRepository.Get(albumId)
+	assert.NotNil(suite.T(), err)
+
+	// Check album tracks have been removed too.
+	tracks, err = trackRepo.GetTracksForAlbum(albumId)
+	assert.Nil(suite.T(), err)
+	assert.Empty(suite.T(), tracks)
+}
+
+func (suite *AlbumRepoTestSuite) TestExists() {
+	// Test with existing data.
+	exists := suite.AlbumRepository.Exists(1)
+	assert.True(suite.T(), exists)
+
+	// Test with non existing data.
+	exists = suite.AlbumRepository.Exists(543)
+	assert.False(suite.T(), exists)
 }

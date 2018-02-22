@@ -22,18 +22,19 @@ import (
 Common stuff for repositories tests.
  */
 
-const TestDataDir = "../../test/"
+const TestDataDir = "test/"
 const TestDatasourceFile = "test.db"
 const TestArtistsFile = TestDataDir + "artists.csv"
 const TestAlbumsFile = TestDataDir + "albums.csv"
 const TestTracksFile = TestDataDir + "tracks.csv"
 const TestCoversFile = TestDataDir + "covers.csv"
 const TestFSLibDir = TestDataDir + "mp3"
+const TestFSEmptyLibDir = TestDataDir + "empty_library"
 
 // Initialises the application test datasource.
 func createTestDatasource() (ds Datasource, err error) {
 	// Create database file.
-	connection, err := sql.Open("sqlite3", os.TempDir() + string(os.PathSeparator) + TestDatasourceFile)
+	connection, err := sql.Open("sqlite3", os.TempDir() + TestDatasourceFile)
 	if err != nil {
 		return
 	}
@@ -74,6 +75,7 @@ func resetTestDataSource(ds Datasource) error {
 
 		initTestDataSource(ds)
 	}
+
 	return nil
 }
 
@@ -81,7 +83,7 @@ func closeTestDataSource(ds Datasource) error {
 	if dbmap, ok := ds.(*gorp.DbMap); ok == true {
 		dbmap.Db.Close()
 
-		return os.Remove(os.TempDir() + string(os.PathSeparator) + TestDatasourceFile)
+		return os.Remove(os.TempDir() + TestDatasourceFile)
 	}
 	return nil
 }
@@ -90,7 +92,11 @@ func closeTestDataSource(ds Datasource) error {
 func initTestDataSource(ds Datasource) (err error) {
 	if dbmap, ok := ds.(*gorp.DbMap); ok == true {
 		// Artists.
-		file, _ := os.OpenFile(TestArtistsFile, os.O_RDONLY, 0666)
+		file, errOpen := os.OpenFile(TestArtistsFile, os.O_RDONLY, 0666)
+		if errOpen != nil {
+			fmt.Println(errOpen)
+		}
+
 		r := csv.NewReader(file)
 		for {
 			record, err := r.Read()
@@ -107,7 +113,11 @@ func initTestDataSource(ds Datasource) (err error) {
 		file.Close()
 
 		// Albums.
-		file, _ = os.OpenFile(TestAlbumsFile, os.O_RDONLY, 0666)
+		file, errOpen = os.OpenFile(TestAlbumsFile, os.O_RDONLY, 0666)
+		if errOpen != nil {
+			fmt.Println(errOpen)
+		}
+
 		r = csv.NewReader(file)
 		for {
 			record, err := r.Read()
@@ -120,17 +130,22 @@ func initTestDataSource(ds Datasource) (err error) {
 
 			// Insert the row in database.
 			dbmap.Exec(
-				"INSERT INTO albums(id, artist_id, title, year) VALUES(?, ?, ?, ?)",
+				"INSERT INTO albums(id, artist_id, title, year, cover_id) VALUES(?, ?, ?, ?, ?)",
 				record[0],
 				record[1],
 				record[2],
 				record[3],
+				record[4],
 			)
 		}
 		file.Close()
 
 		// Tracks.
-		file, _ = os.OpenFile(TestTracksFile, os.O_RDONLY, 0666)
+		file, errOpen = os.OpenFile(TestTracksFile, os.O_RDONLY, 0666)
+		if errOpen != nil {
+			fmt.Println(errOpen)
+		}
+
 		r = csv.NewReader(file)
 		for {
 			record, err := r.Read()
@@ -159,7 +174,11 @@ func initTestDataSource(ds Datasource) (err error) {
 		file.Close()
 
 		// Covers.
-		file, _ = os.OpenFile(TestCoversFile, os.O_RDONLY, 0666)
+		file, errOpen = os.OpenFile(TestCoversFile, os.O_RDONLY, 0666)
+		if errOpen != nil {
+			fmt.Println(errOpen)
+		}
+
 		r = csv.NewReader(file)
 		for {
 			record, err := r.Read()
@@ -238,7 +257,7 @@ type albumRepositoryMock struct{
 
 // Not needed.
 func (m *albumRepositoryMock) Get(id int) (entity domain.Album, err error) {return}
-func (m *albumRepositoryMock) GetAll(hydrate bool) (entities []business.AlbumView, err error) {return}
+func (m *albumRepositoryMock) GetAll(hydrate bool) (entities domain.Albums, err error) {return}
 func (m *albumRepositoryMock) GetAlbumsForArtist(artistId int, hydrate bool) (entities domain.Albums, err error) {return}
 func (m *albumRepositoryMock) Delete(entity *domain.Album) (err error) {return}
 func (m albumRepositoryMock) Exists(id int) bool {return false}
@@ -291,7 +310,7 @@ func (m *trackRepositoryMock) GetTracksForAlbum(albumId int) (entities domain.Tr
 func (m *trackRepositoryMock) Delete(entity *domain.Track) (err error) {return}
 func (m trackRepositoryMock) Exists(id int) bool {return false}
 
-// Returns a valid respones for name "Track #1" for albumId 1 and artistId 1
+// Returns a valid response for name "Track #1" for albumId 1 and artistId 1
 // Returns a valid response for name "Track #2" for albumId 1 and empty artistId.
 // Returns a valid response for name "Track #3" for empty albumId and empty artistId.
 func (m *trackRepositoryMock) GetByName(name string, artistId int, albumId int) (entity domain.Track, err error) {

@@ -75,8 +75,6 @@ func (tr TrackDbRepository) Save(entity *domain.Track) (err error) {
 		err = tr.AppContext.DB.Insert(entity)
 		return
 	}
-
-	return nil
 }
 
 // Check if a track exists for a given id.

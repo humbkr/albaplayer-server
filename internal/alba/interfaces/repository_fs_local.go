@@ -60,7 +60,11 @@ type LocalFilesystemRepository struct{
 	AppContext *AppContext
 }
 
-func (r LocalFilesystemRepository) ScanMediaFiles(path string) (processed int, added int) {
+/*
+Scans a directory and import media files metadata and cover into the app.
+ */
+// TODO: compute return values.
+func (r LocalFilesystemRepository) ScanMediaFiles(path string) (processed int, added int, err error) {
 	// TODO Find a way to not have to get the datasource implementation.
 	gorpDbMap, ok := r.AppContext.DB.(*gorp.DbMap)
 	if !ok {
@@ -68,15 +72,15 @@ func (r LocalFilesystemRepository) ScanMediaFiles(path string) (processed int, a
 	}
 
 	dbTransaction, _ := gorpDbMap.Begin()
-	scanDirectory(path, dbTransaction)
+	err = scanDirectory(path, dbTransaction)
 	dbTransaction.Commit()
 
 	return
 }
 
 // Recursively browses a directory and import / update all the audio files in the database.
-func scanDirectory(path string, dbTransaction *gorp.Transaction) {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+func scanDirectory(path string, dbTransaction *gorp.Transaction) (err error) {
+	if _, err = os.Stat(path); os.IsNotExist(err) {
 		return
 	}
 
@@ -117,10 +121,11 @@ func scanDirectory(path string, dbTransaction *gorp.Transaction) {
 	}
 
 	processMediaFiles(mediaFiles, potentialAlbumCover, dbTransaction)
+
+	return
 }
 
 func processMediaFiles(mediaFiles map[string][]mediaMetadata, cover string, dbTransaction *gorp.Transaction) {
-	var err error
 	uniqueAlbum := len(mediaFiles) < 2
 
 	// Process the media files per album.
@@ -131,10 +136,23 @@ func processMediaFiles(mediaFiles map[string][]mediaMetadata, cover string, dbTr
 		compilation := false
 
 		currentArtist := album[0].Artist
-		for index, metadataTrack := range album {
-			if index > 0 && metadataTrack.Artist != currentArtist {
+		for i := 0; i < len(album) && !compilation; i++ {
+			if i > 0 && album[i].Artist != currentArtist {
 				compilation = true
-				break
+			}
+		}
+
+		var variousArtistsId int
+		if compilation {
+			// TODO we shouldn't have to do this for each directory
+			// Get the artist id of "Various artists" (always created before we start scanning).
+			var entities domain.Artists
+			// TODO Bad! Persistance layer should be abstracted!
+			_, transErr := dbTransaction.Select(&entities, "SELECT * FROM artists WHERE name = ?", business.LibraryDefaultCompilationArtist)
+			if transErr == nil {
+				if len(entities) > 0 {
+					variousArtistsId = entities[0].Id
+				}
 			}
 		}
 
@@ -149,11 +167,7 @@ func processMediaFiles(mediaFiles map[string][]mediaMetadata, cover string, dbTr
 			var albumId int
 			var albumCoverId int
 
-			artistId, err = processArtist(dbTransaction, &metadataTrack)
-			if err != nil {
-				// TODO devise a decent logging system.
-				log.Println(err)
-			}
+			artistId, _ = processArtist(dbTransaction, &metadataTrack)
 
 			if uniqueAlbum && len(cover) > 0 {
 				// There is only one album in the directory and we found a valid cover file, so add the cover to the
@@ -173,26 +187,18 @@ func processMediaFiles(mediaFiles map[string][]mediaMetadata, cover string, dbTr
 
 			albumArtistId := artistId
 			if compilation {
-				// Get the artist id of "Various artists".
-				var entities domain.Artists
-				_, transErr := dbTransaction.Select(&entities, "SELECT * FROM artists WHERE name = ?", business.LibraryDefaultCompilationArtist)
-				if transErr == nil {
-					if len(entities) > 0 {
-						albumArtistId = entities[0].Id
-					}
-				}
+				albumArtistId = variousArtistsId
 			}
 
-			albumId, err = processAlbum(dbTransaction, &metadataTrack, albumArtistId, albumCoverId)
-			if err != nil {
-				// TODO devise a decent logging system.
-				log.Println(err)
-			}
+			albumId, _ = processAlbum(dbTransaction, &metadataTrack, albumArtistId, albumCoverId)
 
-			// Find out what cover we can set to the track based on config preferences.
+			// Find out what cover we can set for the track based on config preferences.
+			coverPreferredSource := viper.GetString("Covers.PreferredSource")
+
 			// Default to the one we may have found previously in the folder if there is tracks from one album only.
 			var trackCoverId = albumCoverId
-			if viper.GetString("Covers.PreferredSource") == business.CoverPreferredSourceMediaFile {
+			// Look for a cover in the metadata if user prefers it this way or no folder cover has been found.
+			if coverPreferredSource == business.CoverPreferredSourceMediaFile || albumCoverId == 0 {
 				// Track metadata has priority, so try to find a cover in metadata.
 				trackCover, err := getMediaCoverFromTrackMetadata(metadataTrack)
 				if err == nil {
@@ -205,11 +211,7 @@ func processMediaFiles(mediaFiles map[string][]mediaMetadata, cover string, dbTr
 				}
 			}
 
-			_, err := processTrack(dbTransaction, &metadataTrack, artistId, albumId, trackCoverId)
-			if err != nil {
-				// TODO devise a decent logging system.
-				log.Println(err)
-			}
+			processTrack(dbTransaction, &metadataTrack, artistId, albumId, trackCoverId)
 		}
 	}
 }
@@ -244,6 +246,7 @@ func processArtist(dbTransaction *gorp.Transaction, metadata *mediaMetadata) (id
 		artist := domain.Artist{}
 		// See if the artist exists and if so instanciate it with existing data.
 		var entities domain.Artists
+		// TODO Bad! Persistance layer should be abstracted!
 		_, transErr := dbTransaction.Select(&entities, "SELECT * FROM artists WHERE name = ?", metadata.Artist)
 		if transErr == nil {
 			if len(entities) > 0 {
@@ -279,6 +282,7 @@ func processAlbum(dbTransaction *gorp.Transaction, metadata *mediaMetadata, arti
 		album := domain.Album{}
 		// See if the album exists and if so instanciate it with existing data.
 		var entities domain.Albums
+		// TODO Bad! Persistance layer should be abstracted!
 		_, transErr := dbTransaction.Select(&entities, "SELECT * FROM albums WHERE title = ? AND artist_id = ?", metadata.Album, artistId)
 		if transErr == nil {
 			if len(entities) > 0 {
@@ -323,6 +327,7 @@ func processTrack(dbTransaction *gorp.Transaction, metadata *mediaMetadata, arti
 	track := domain.Track{}
 	// See if the track exists and if so instanciate it with existing data.
 	var entities domain.Tracks
+	// TODO Bad! Persistance layer should be abstracted!
 	_, transErr := dbTransaction.Select(&entities, "SELECT * FROM tracks WHERE title = ? AND artist_id = ? AND album_id = ?", metadata.Title, artistId, albumId)
 	if transErr == nil {
 		if len(entities) > 0 {
@@ -362,6 +367,7 @@ func processCover(dbTransaction *gorp.Transaction, cover domain.Cover) (id int, 
 	cover.Path = cover.Hash + cover.Ext
 
 	var coverFromDb domain.Cover
+	// TODO Bad! Persistance layer should be abstracted!
 	coverExistsErr := dbTransaction.SelectOne(&coverFromDb, "SELECT * FROM covers WHERE hash = ?", cover.Hash)
 	if coverExistsErr == nil && coverFromDb.Id != 0 {
 		// Nothing to do about the cover, just return the cover id to be used to link it to the track.
@@ -522,13 +528,4 @@ func md5Checksum(reader io.Reader) (hash string, err error) {
 // Removes spaces and nul character from a string.
 func sanitizeString(s string) string {
 	return strings.Trim(strings.TrimSpace(s), "\x00")
-}
-
-func arrayContains(arr []string, str string) bool {
-	for _, a := range arr {
-		if a == str {
-			return true
-		}
-	}
-	return false
 }

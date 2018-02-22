@@ -73,8 +73,6 @@ func (ar ArtistDbRepository) Save(entity *domain.Artist) (err error) {
 		err = ar.AppContext.DB.Insert(entity)
 		return
 	}
-
-	return nil
 }
 
 /**
@@ -101,6 +99,7 @@ func (ar ArtistDbRepository) Exists(id int) bool {
 	_, err := ar.Get(id)
 	return err == nil
 }
+
 
 /**
 Helper function to populate albums.

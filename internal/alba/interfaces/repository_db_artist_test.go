@@ -129,6 +129,7 @@ func (suite *ArtistRepoTestSuite) TestSave() {
  }
 
 func (suite *ArtistRepoTestSuite) TestDelete() {
+	albumRepo := AlbumDbRepository{AppContext: suite.ArtistRepository.AppContext}
 	var artistId = 1
 
 	//Get artist to delete.
@@ -144,10 +145,46 @@ func (suite *ArtistRepoTestSuite) TestDelete() {
 	assert.NotNil(suite.T(), err)
 
 	// Check artist's albums have been removed too.
-	albumRepo := AlbumDbRepository{AppContext: suite.ArtistRepository.AppContext}
 	albums, err := albumRepo.GetAlbumsForArtist(artistId, false)
 	assert.Nil(suite.T(), err)
 	assert.Empty(suite.T(), albums)
 
 	// Check that tracks have been removed too is already done in albumRepository tests.
+
+	// Test with an artist object where albums are not populated.
+	artistId = 2
+
+	// Get album to delete.
+	artistNoAlbums, err := suite.ArtistRepository.Get(artistId)
+	assert.Nil(suite.T(), err)
+	assert.NotEmpty(suite.T(), artistNoAlbums.Albums)
+
+	// Remove tracks from object.
+	artistNoAlbums.Albums = domain.Albums{}
+	assert.Empty(suite.T(), artistNoAlbums.Albums)
+
+	// Delete artist.
+	err = suite.ArtistRepository.Delete(&artistNoAlbums)
+	assert.Nil(suite.T(), err)
+
+	// Check album has been removed from the database.
+	_, err = suite.ArtistRepository.Get(artistId)
+	assert.NotNil(suite.T(), err)
+
+	// Check album tracks have been removed too.
+	albums, err = albumRepo.GetAlbumsForArtist(artistId, false)
+	assert.Nil(suite.T(), err)
+	assert.Empty(suite.T(), albums)
+
+	// Check that tracks have been removed too is already done in albumRepository tests.
+}
+
+func (suite *ArtistRepoTestSuite) TestExists() {
+	// Test with existing data.
+	exists := suite.ArtistRepository.Exists(1)
+	assert.True(suite.T(), exists)
+
+	// Test with non existing data.
+	exists = suite.ArtistRepository.Exists(543)
+	assert.False(suite.T(), exists)
 }
