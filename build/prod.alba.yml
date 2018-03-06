@@ -1,0 +1,22 @@
+# Sample file with default values.
+
+#Covers:
+#    # Where to store covers files to be served
+#    Directory: ./covers
+#    # Preferred source for media cover image ("file" => image from mp3 file or "folder" => image file from folder)
+#    PreferredSource: folder
+
+# Logging system.
+#Log:
+#    Enabled: false
+#    File: app.log
+#    Path: ./
+
+# Webserver configuration.
+#Server:
+#    Port: 8888
+
+# Library configuration.
+Library:
+    # Absolute path to your music collection.
+    Path: /path/to/your/library
