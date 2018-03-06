@@ -66,6 +66,12 @@
   revision = "392dba7d905ed5d04a5794ba89f558b27e2ba1ca"
 
 [[projects]]
+  name = "github.com/inconshreveable/mousetrap"
+  packages = ["."]
+  revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
+  version = "v1.0"
+
+[[projects]]
   name = "github.com/magiconair/properties"
   packages = ["."]
   revision = "be5ece7dd465ab0765a9682137865547526d1dfb"
@@ -135,6 +141,12 @@
   version = "v1.1.0"
 
 [[projects]]
+  name = "github.com/spf13/cobra"
+  packages = ["."]
+  revision = "7b2c5ac9fc04fc5efafb60700713d4fa609b777b"
+  version = "v0.0.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/spf13/jwalterweatherman"
   packages = ["."]
@@ -171,12 +183,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/xhenner/mp3-go"
-  packages = ["."]
-  revision = "cefd7fb0189ce805f2bb4213d6717bff03ba41f9"
-
-[[projects]]
-  branch = "master"
   name = "golang.org/x/net"
   packages = ["context"]
   revision = "1c05540f6879653db88113bc4a2b70aec4bd491f"
@@ -209,6 +215,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6b0b922cea369f8bb8659a4587ee4605f564038b0b248428b2a1f92b376d24bf"
+  inputs-digest = "dc04bdc557f8cd37dafcebe6af5b24c71ad72816a30ae739a9571e1b14161462"
   solver-name = "gps-cdcl"
   solver-version = 1

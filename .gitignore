@@ -1,17 +1,25 @@
-# IDEs
+## IDEs
 .idea
 
-# OS
+## OS
 .DS_Store
 
-# Application
+## Application
+
+# Generated files
 alba.db
 app.log
-/tmp
 /build/linux
 /build/macos
 /build/windows
 /alba-player
+
+# Dev tests
+/tmp
+
+# Frontend app
+/web/*
+/web/.gitkeep
 
 # Dependencies
 vendor

@@ -65,6 +65,8 @@ Scans a directory and import media files metadata and cover into the app.
  */
 // TODO: compute return values.
 func (r LocalFilesystemRepository) ScanMediaFiles(path string) (processed int, added int, err error) {
+	log.Println("scan folder " + path)
+
 	// TODO Find a way to not have to get the datasource implementation.
 	gorpDbMap, ok := r.AppContext.DB.(*gorp.DbMap)
 	if !ok {

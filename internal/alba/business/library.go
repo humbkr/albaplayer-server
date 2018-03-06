@@ -13,8 +13,6 @@ const LibraryDefaultArtist = "Unknown artist"
 const LibraryDefaultAlbum = "Unknown album"
 const LibraryDefaultCompilationArtist = "Various artists"
 
-var libraryUpdateMutex sync.Mutex
-
 type LibraryInteractor struct {
 	ArtistRepository  ArtistRepository
 	AlbumRepository AlbumRepository
