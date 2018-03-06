@@ -5,7 +5,7 @@ services:
             context: .
             dockerfile: ./Dockerfile
         volumes:
-            - .:/go/src/git.humbkr.com/jgalletta/alba-player
+            - ..:/go/src/git.humbkr.com/jgalletta/alba-player
         working_dir: /go/src/git.humbkr.com/jgalletta/alba-player
         ports:
             - 8888
