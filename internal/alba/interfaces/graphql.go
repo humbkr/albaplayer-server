@@ -282,6 +282,45 @@ var libraryUpdateStateType = graphql.NewObject(graphql.ObjectConfig{
 	},
 })
 
+var settingsType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "Settings",
+	Fields: graphql.Fields{
+		"libraryPath": &graphql.Field{
+			Name:        "Music library path",
+			Description: "Absolute path of the music collection on disk.",
+			Type:        graphql.String,
+			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+				if settings, ok := p.Source.(business.Settings); ok == true {
+					return settings.LibraryPath, nil
+				}
+				return nil, nil
+			},
+		},
+		"coversPreferredSource": &graphql.Field{
+			Name:        "Covers preferred source",
+			Description: "Tracks and album covers preferred source when scanning the library. 'folder' or 'file'",
+			Type:        graphql.String,
+			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+				if settings, ok := p.Source.(business.Settings); ok == true {
+					return settings.CoversPreferredSource, nil
+				}
+				return nil, nil
+			},
+		},
+		"disableLibrarySettings": &graphql.Field{
+			Name:        "Disable library settings",
+			Description: "Whether the library settings are editable on the client side or not.",
+			Type:        graphql.Boolean,
+			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+				if settings, ok := p.Source.(business.Settings); ok == true {
+					return settings.DisableLibraryConfiguration, nil
+				}
+				return nil, nil
+			},
+		},
+	},
+})
+
 /*
 Creates a new GraphQL interactor.
 
@@ -411,7 +450,15 @@ func NewGraphQLInteractor(ci *business.LibraryInteractor) *graphQLInteractor {
 					return interactor.Library.TrackRepository.Get(id)
 				},
 			},
-			// TODO: I don't think using a query here is okay.
+			"settings": &graphql.Field{
+				Type: settingsType,
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					settingsInteractor := business.SettingsInteractor{}
+					return settingsInteractor.GetSettings(), nil
+				},
+			},
+
+			// TODO: I don't think using queries here is okay.
 			"updateLibrary": &graphql.Field{
 				Type: libraryUpdateStateType,
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {

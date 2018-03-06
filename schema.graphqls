@@ -7,8 +7,15 @@ type Query {
     albums: [Album]
     artist(id: ID!): Artist
     artists: [Artist]
-    track(id: ID!) : Track
-    tracks : [Track]
+    track(id: ID!): Track
+    tracks: [Track]
+    settings: [Settings]
+}
+
+type Artist {
+    id: ID!
+    name: String!
+    albums: [Album]
 }
 
 type Album {
@@ -16,12 +23,6 @@ type Album {
     title: String!
     artist: Artist
     tracks: [Track]
-}
-
-type Artist {
-    id: ID!
-    name: String!
-    albums: [Album]
 }
 
 type Track {
@@ -32,6 +33,12 @@ type Track {
     disc: String
     number: Integer
     duration: Integer
-    Genre: String
-    Path: String!
+    cover: String
+    path: String!
+}
+
+type Settings {
+    libraryPath: String
+    coversPreferredSource: String
+    disableLibrarySettings: Boolean
 }
