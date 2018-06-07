@@ -30,6 +30,7 @@ echo "Finished."
 echo "Generate archives..."
 
 # Generate version file.
+DATE=`date '+%Y%m%d%H%M%S'`
 echo "Version: ${version_number}" >> ${project_root}/build/version.txt
 echo "Build date: ${DATE}" >> ${project_root}/build/version.txt
 
@@ -57,7 +58,6 @@ else
 fi
 
 # zip / tar files.
-DATE=`date '+%Y%m%d%H%M%S'`
 cd ${project_root}/build
 tar czf albaplayer-linux-${version_number}.tar.gz linux
 zip -rq albaplayer-macos-${version_number}.zip macos

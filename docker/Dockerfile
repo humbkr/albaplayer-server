@@ -5,6 +5,7 @@ RUN apt-get update
 
 # Vim
 RUN apt-get install -y vim
+RUN apt-get install -y zip
 
 # Create aliases
 RUN echo 'alias ll="ls -lah"' >> ~/.bashrc
