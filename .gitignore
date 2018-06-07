@@ -13,6 +13,7 @@ app.log
 /build/macos
 /build/windows
 /build/albaplayer-*
+/build/version.txt
 /alba-player
 
 # Dev tests
