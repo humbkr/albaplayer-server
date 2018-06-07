@@ -70,7 +70,20 @@ var serveCmd = &cobra.Command{
 		}
 
 		// Launch the server.
-		fmt.Printf("Server is up: http://localhost:%s/graphql\n", viper.GetString("Server.Port"))
-		http.ListenAndServe(":" + viper.GetString("Server.Port"), nil)
+		if viper.GetBool("Server.Https.Enabled") {
+			fmt.Printf("Server is up on port %s (https)\n", viper.GetString("Server.Port"))
+			errServ := http.ListenAndServeTLS(
+				":" + viper.GetString("Server.Port"),
+				viper.GetString("Server.Https.CertFile"),
+				viper.GetString("Server.Https.KeyFile"),
+				nil)
+
+			if errServ != nil {
+				fmt.Printf("ERROR: %s\n", errServ.Error())
+			}
+		} else {
+			fmt.Printf("Server is up on port %s (http)\n", viper.GetString("Server.Port"))
+			http.ListenAndServe(":" + viper.GetString("Server.Port"), nil)
+		}
 	},
 }

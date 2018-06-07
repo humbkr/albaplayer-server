@@ -24,6 +24,9 @@ func InitApp() business.LibraryInteractor {
 	viper.SetDefault("Log.Path", "./")
 	// Webserver.
 	viper.SetDefault("Server.Port", "8888")
+	viper.SetDefault("Server.Https.Enabled", false)
+	viper.SetDefault("Server.Https.CertFile", "")
+	viper.SetDefault("Server.Https.KeyFile", "")
 	// Library.
 	viper.SetDefault("Library.Path", "")
 	// Dev mode.

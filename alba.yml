@@ -13,6 +13,12 @@ Covers:
 # Webserver configuration.
 #Server:
 #    Port: 8888
+#    Https:
+#        Enabled: false
+#        # Path to ssl certificate.
+#        CertFile: ""
+#        # Path to ssl file.
+#        KeyFile: ""
 
 DevMode:
     Enabled: true
@@ -20,7 +26,6 @@ DevMode:
 # Library configuration.
 Library:
     # Absolute path to your music collection.
-    #Path: /Users/julien/Music/library
     Path: ./tmp/alba
 
 # Client app settings.
