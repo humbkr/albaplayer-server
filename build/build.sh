@@ -1,42 +1,67 @@
 #!/usr/bin/env bash
 
+project_root="$(dirname "$(pwd)")"
+
+echo "Enter version number: "
+read version_number
+
+
 # Clean previously generated files.
-rm -rf linux macos windows
-mkdir linux macos windows
+rm -rf ${project_root}/build/linux ${project_root}/build/macos ${project_root}/build/windows
+rm -f ${project_root}/build/albaplayer-*
+rm -f ${project_root}/build/version.txt
+mkdir ${project_root}/build/linux ${project_root}/build/macos ${project_root}/build/windows
 
 # Build for Linux.
 echo "Start build for Linux..."
-env GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -o linux/alba ../main.go
+env GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -o ${project_root}/build/linux/alba ${project_root}/main.go
 echo "Finished."
 
 # Build for MacOs.
 echo "Start build for MacOs..."
-env CC=o64-clang GOOS=darwin GOARCH=amd64 CGO_ENABLED=1 go build -o macos/alba ../main.go
+env CC=o64-clang GOOS=darwin GOARCH=amd64 CGO_ENABLED=1 go build -o ${project_root}/build/macos/alba ${project_root}/main.go
 echo "Finished."
 
 # Build for Windows.
 echo "Start build for Windows..."
-env CC=x86_64-w64-mingw32-gcc GOOS=windows GOARCH=amd64 CGO_ENABLED=1 go build -o windows/alba.exe ../main.go
+env CC=x86_64-w64-mingw32-gcc GOOS=windows GOARCH=amd64 CGO_ENABLED=1 go build -o ${project_root}/build/windows/alba.exe ${project_root}/main.go
 echo "Finished."
 
 echo "Generate archives..."
 
-# Copy config file for each os.
-cp prod.alba.yml linux/alba.yml
-cp prod.alba.yml macos/alba.yml
-cp prod.alba.yml windows/alba.yml
+# Generate version file.
+echo "Version: ${version_number}" >> ${project_root}/build/version.txt
+echo "Build date: ${DATE}" >> ${project_root}/build/version.txt
+
+
+# Copy config and version files for each os.
+cp ${project_root}/build/albaplayer.service ${project_root}/build/linux/albaplayer.service
+
+cp ${project_root}/build/prod.alba.yml ${project_root}/build/linux/alba.yml
+cp ${project_root}/build/prod.alba.yml ${project_root}/build/macos/alba.yml
+cp ${project_root}/build/prod.alba.yml ${project_root}/build/windows/alba.yml
+
+cp ${project_root}/build/version.txt ${project_root}/build/linux/version.txt
+cp ${project_root}/build/version.txt ${project_root}/build/macos/version.txt
+cp ${project_root}/build/version.txt ${project_root}/build/windows/version.txt
+
 
 # Copy web directory for each os.
-if [ ! -f ../web/index.html ]; then
+if [ ! -f ${project_root}/web/index.html ]; then
     echo "The frontend app seems to not be present in the /web directory, did you forget to build it?"
     exit 1
 else
-    cp -R ../web linux
-    cp -R ../web macos
-    cp -R ../web windows
+    cp -R ${project_root}/web ${project_root}/build/linux
+    cp -R ${project_root}/web ${project_root}/build/macos
+    cp -R ${project_root}/web ${project_root}/build/windows
 fi
 
-# TODO zip / tar files.
+# zip / tar files.
+DATE=`date '+%Y%m%d%H%M%S'`
+cd ${project_root}/build
+tar czf albaplayer-linux-${version_number}.tar.gz linux
+zip -r albaplayer-macos-${version_number}.zip macos
+zip -r albaplayer-windows-${version_number}.zip windows
 
 echo "Application archives generated."
 exit 0
