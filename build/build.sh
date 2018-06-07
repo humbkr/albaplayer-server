@@ -60,8 +60,8 @@ fi
 DATE=`date '+%Y%m%d%H%M%S'`
 cd ${project_root}/build
 tar czf albaplayer-linux-${version_number}.tar.gz linux
-zip -r albaplayer-macos-${version_number}.zip macos
-zip -r albaplayer-windows-${version_number}.zip windows
+zip -rq albaplayer-macos-${version_number}.zip macos
+zip -rq albaplayer-windows-${version_number}.zip windows
 
 echo "Application archives generated."
 exit 0

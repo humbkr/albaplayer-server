@@ -15,7 +15,6 @@
 ## https://fabianlee.org/2017/05/21/golang-running-a-go-binary-as-a-systemd-service-on-ubuntu-16-04/
 ##
 
-
 [Unit]
 Description=Alba Player service
 # Alsolute path to the albaplayer executable
@@ -24,7 +23,7 @@ After=network.target
 
 [Service]
 Type=simple
-# User and group with which to run the executable
+# User and group with which to run the executable (if you have https enabled the user must have access to the ssl files)
 User=www-data
 Group=www-data
 LimitNOFILE=1024
@@ -33,10 +32,10 @@ Restart=on-failure
 RestartSec=10
 startLimitIntervalSec=60
 
-# Alsolute path to the albaplayer executable
-WorkingDirectory=/path/to/folder/containing/albaplayer/executable
 # Alsolute path to the directory containing the albaplayer executable
-ExecStart=/path/to/albaplayer/executable
+WorkingDirectory=/path/to/folder/containing/albaplayer/executable
+# Command to run when starting the service (do not forget the " serve" at the end)
+ExecStart=/path/to/albaplayer/executable serve
 
 # make sure log directory exists and owned by syslog
 PermissionsStartOnly=true
