@@ -5,8 +5,8 @@ services:
             context: .
             dockerfile: ./Dockerfile
         volumes:
-            - ..:/go/src/git.humbkr.com/jgalletta/alba-player
-        working_dir: /go/src/git.humbkr.com/jgalletta/alba-player
+            - ..:/go/src/github.com/humbkr/albaplayer-server
+        working_dir: /go/src/github.com/humbkr/albaplayer-server
         ports:
             - 8888
         # Make container run indefinitely

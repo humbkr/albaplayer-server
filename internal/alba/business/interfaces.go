@@ -1,6 +1,6 @@
 package business
 
-import "git.humbkr.com/jgalletta/alba-player/internal/alba/domain"
+import "github.com/humbkr/albaplayer-server/internal/alba/domain"
 
 type ArtistRepository interface {
 	// Gets an entity from the datasource.

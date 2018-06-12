@@ -2,14 +2,14 @@ package interfaces
 
 import (
 	"database/sql"
-	"git.humbkr.com/jgalletta/alba-player/internal/alba/domain"
+	"github.com/humbkr/albaplayer-server/internal/alba/domain"
 	"log"
 	"github.com/go-gorp/gorp"
 	_ "github.com/mattn/go-sqlite3"
 	"encoding/csv"
 	"os"
 	"io"
-	"git.humbkr.com/jgalletta/alba-player/internal/alba/business"
+	"github.com/humbkr/albaplayer-server/internal/alba/business"
 	"github.com/stretchr/testify/mock"
 	"errors"
 	"math/rand"

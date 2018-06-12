@@ -4,7 +4,7 @@ import (
 	"testing"
 	"github.com/stretchr/testify/suite"
 	"github.com/stretchr/testify/assert"
-	"git.humbkr.com/jgalletta/alba-player/internal/alba/domain"
+	"github.com/humbkr/albaplayer-server/internal/alba/domain"
 )
 
 type ArtistInteractorTestSuite struct {

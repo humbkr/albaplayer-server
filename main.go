@@ -1,6 +1,6 @@
 package main
 
-import "git.humbkr.com/jgalletta/alba-player/cmd"
+import "github.com/humbkr/albaplayer-server/cmd"
 
 func main() {
 	cmd.Execute()

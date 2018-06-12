@@ -1,7 +1,7 @@
 package interfaces
 
 import (
-	"git.humbkr.com/jgalletta/alba-player/internal/alba/domain"
+	"github.com/humbkr/albaplayer-server/internal/alba/domain"
 	"errors"
 )
 

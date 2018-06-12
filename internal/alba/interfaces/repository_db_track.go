@@ -3,7 +3,7 @@ package interfaces
 import (
 	"errors"
 
-	"git.humbkr.com/jgalletta/alba-player/internal/alba/domain"
+	"github.com/humbkr/albaplayer-server/internal/alba/domain"
 )
 
 type TrackDbRepository struct {

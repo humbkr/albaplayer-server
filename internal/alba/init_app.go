@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"git.humbkr.com/jgalletta/alba-player/internal/alba/business"
-	"git.humbkr.com/jgalletta/alba-player/internal/alba/interfaces"
+	"github.com/humbkr/albaplayer-server/internal/alba/business"
+	"github.com/humbkr/albaplayer-server/internal/alba/interfaces"
 	"github.com/natefinch/lumberjack"
 	"github.com/spf13/viper"
 )

@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"git.humbkr.com/jgalletta/alba-player/internal/alba"
-	"git.humbkr.com/jgalletta/alba-player/internal/alba/interfaces"
+	"github.com/humbkr/albaplayer-server/internal/alba"
+	"github.com/humbkr/albaplayer-server/internal/alba/interfaces"
 	"github.com/mnmtanish/go-graphiql"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"

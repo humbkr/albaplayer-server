@@ -4,7 +4,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"testing"
 	"github.com/stretchr/testify/assert"
-	"git.humbkr.com/jgalletta/alba-player/internal/alba/domain"
+	"github.com/humbkr/albaplayer-server/internal/alba/domain"
 	"github.com/spf13/viper"
 	"os"
 	"log"
