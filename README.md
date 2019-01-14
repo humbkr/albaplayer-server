@@ -1,5 +1,5 @@
 # Alba Player (server)
-Minimalistic audio library web player.
+> Minimalistic audio library web player.
 
 ## About
 Alba player is an audio library web-based player optimized for desktop. I was tired of all the desktop audio players available on linux 
