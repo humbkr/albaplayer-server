@@ -33,6 +33,7 @@ var validCoverNames = []string{
 	"artwork",
 	"album",
 	"front",
+	"folder",
 }
 
 /**
