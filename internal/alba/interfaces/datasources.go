@@ -49,6 +49,10 @@ func InitAlbaDatasource() (ds Datasource, err error) {
 	dbmap.AddTableWithName(domain.Cover{}, "covers").SetKeys(true, "Id").AddIndex("CoverHashIndex", "nil", []string{"hash"})
 	dbmap.AddTableWithName(business.InternalVariable{}, "variables").SetKeys(false, "Key")
 
+	dbmap.AddTableWithName(domain.Playlist{}, "playlist").SetKeys(true, "Id")
+	// Join table.
+	dbmap.AddTableWithName(playlistTrack{}, "playlist_track").SetKeys(true, "playlist_id", "track_id")
+
 	// Create the tables.
 	err = dbmap.CreateTablesIfNotExists()
 	if err != nil {
