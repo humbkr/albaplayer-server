@@ -113,6 +113,24 @@ type CoverRepository interface {
 	ExistsByHash(hash string) int
 }
 
+type InternalVariableRepository interface {
+	// Gets an entity from a datasource.
+	//
+	// Returns an hydrated entity if entity is fund, else an error.
+	Get(key string) (entity InternalVariable, err error)
+
+	// Saves an entity to a datasource.
+	Save(entity *InternalVariable) (err error)
+
+	// Deletes an entity from a datasource.
+	//
+	// Does not return an error if the entity doesn't exists on the datasource or no entity id is given.
+	Delete(entity *InternalVariable) (err error)
+
+	// Tests if an entity exists in datasource.
+	Exists(key string) bool
+}
+
 type LibraryRepository interface {
 	Erase()
 }

@@ -8,17 +8,17 @@ This package exposes the data and operations regarding settings available from t
 All app-wide settings are stored in the alba.yml file.
  */
 
-type Settings struct {
+type ClientSettings struct {
 	LibraryPath string
 	CoversPreferredSource string
 
 	DisableLibraryConfiguration bool
 }
 
-type SettingsInteractor struct {}
+type ClientSettingsInteractor struct {}
 
-func (si *SettingsInteractor) GetSettings() Settings {
-	var settings Settings
+func (si *ClientSettingsInteractor) GetSettings() ClientSettings {
+	var settings ClientSettings
 
 	settings.DisableLibraryConfiguration = viper.GetBool("ClientSettings.DisableLibraryConfiguration")
 	settings.LibraryPath = viper.GetString("Library.Path")

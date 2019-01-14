@@ -282,6 +282,34 @@ var libraryUpdateStateType = graphql.NewObject(graphql.ObjectConfig{
 	},
 })
 
+var internalVariableType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "Variable",
+	Fields: graphql.Fields{
+		"key": &graphql.Field{
+			Name:        "Key",
+			Description: "Unique key of the variable.",
+			Type:        graphql.String,
+			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+				if settings, ok := p.Source.(business.InternalVariable); ok == true {
+					return settings.Key, nil
+				}
+				return nil, nil
+			},
+		},
+		"value": &graphql.Field{
+			Name:        "Value",
+			Description: "Value of the variable",
+			Type:        graphql.String,
+			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+				if settings, ok := p.Source.(business.InternalVariable); ok == true {
+					return settings.Value, nil
+				}
+				return nil, nil
+			},
+		},
+	},
+})
+
 var settingsType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "Settings",
 	Fields: graphql.Fields{
@@ -290,7 +318,7 @@ var settingsType = graphql.NewObject(graphql.ObjectConfig{
 			Description: "Absolute path of the music collection on disk.",
 			Type:        graphql.String,
 			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-				if settings, ok := p.Source.(business.Settings); ok == true {
+				if settings, ok := p.Source.(business.ClientSettings); ok == true {
 					return settings.LibraryPath, nil
 				}
 				return nil, nil
@@ -301,7 +329,7 @@ var settingsType = graphql.NewObject(graphql.ObjectConfig{
 			Description: "Tracks and album covers preferred source when scanning the library. 'folder' or 'file'",
 			Type:        graphql.String,
 			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-				if settings, ok := p.Source.(business.Settings); ok == true {
+				if settings, ok := p.Source.(business.ClientSettings); ok == true {
 					return settings.CoversPreferredSource, nil
 				}
 				return nil, nil
@@ -312,7 +340,7 @@ var settingsType = graphql.NewObject(graphql.ObjectConfig{
 			Description: "Whether the library settings are editable on the client side or not.",
 			Type:        graphql.Boolean,
 			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-				if settings, ok := p.Source.(business.Settings); ok == true {
+				if settings, ok := p.Source.(business.ClientSettings); ok == true {
 					return settings.DisableLibraryConfiguration, nil
 				}
 				return nil, nil
@@ -453,8 +481,21 @@ func NewGraphQLInteractor(ci *business.LibraryInteractor) *graphQLInteractor {
 			"settings": &graphql.Field{
 				Type: settingsType,
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					settingsInteractor := business.SettingsInteractor{}
+					settingsInteractor := business.ClientSettingsInteractor{}
 					return settingsInteractor.GetSettings(), nil
+				},
+			},
+			"variable": &graphql.Field{
+				Type: internalVariableType,
+				Args: graphql.FieldConfigArgument{
+					"key": &graphql.ArgumentConfig{
+						Description: "Key",
+						Type: graphql.NewNonNull(graphql.ID),
+					},
+				},
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					key := p.Args["key"].(string)
+					return interactor.Library.InternalVariableRepository.Get(key)
 				},
 			},
 
