@@ -106,7 +106,7 @@ func scanDirectory(path string, dbTransaction *gorp.Transaction) (err error) {
 		if file.IsDir() {
 			// Recursion.
 			scanDirectory(filePath, dbTransaction)
-		} else if matched, _ := filepath.Match("*.mp3", file.Name()); matched {
+		} else if matched, _ := filepath.Match("*.mp3", strings.ToLower(file.Name())); matched {
 			// Get ID3 metadata and add it to an array.
 			metadata, err := getMetadataFromFile(filePath)
 			if err == nil {
