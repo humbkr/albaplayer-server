@@ -11,12 +11,15 @@ RUN apt-get install -y zip
 RUN echo 'alias ll="ls -lah"' >> ~/.bashrc
 RUN echo 'alias vi="vim"' >> ~/.bashrc
 
+# Create working dir
+RUN mkdir /app
+
 # Set go bin which doesn't appear to be set already
 ENV GOBIN /go/bin
 
 # Install dependency manager
-RUN go get github.com/golang/dep/...
-# Install live refresh serveer
+# RUN go get github.com/golang/dep/...
+# Install live refresh server
 RUN go get github.com/pilu/fresh
 
 CMD []

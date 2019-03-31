@@ -5,8 +5,8 @@ services:
             context: .
             dockerfile: ./Dockerfile
         volumes:
-            - ..:/go/src/github.com/humbkr/albaplayer-server
-        working_dir: /go/src/github.com/humbkr/albaplayer-server
+            - ..:/app
+        working_dir: /app
         ports:
             - 8888
         # Make container run indefinitely
