@@ -65,6 +65,7 @@ func InitApp() business.LibraryInteractor {
 	libraryInteractor.CoverRepository = interfaces.CoverDbRepository{AppContext: &appContext}
 	libraryInteractor.LibraryRepository = interfaces.LibraryDbRepository{AppContext: &appContext}
 	libraryInteractor.MediaFileRepository = interfaces.LocalFilesystemRepository{AppContext: &appContext}
+	libraryInteractor.InternalVariableRepository = interfaces.InternalVariableDbRepository{AppContext: &appContext}
 
 	return libraryInteractor
 }

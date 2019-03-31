@@ -5,6 +5,7 @@ import (
 
 	"log"
 
+	"github.com/humbkr/albaplayer-server/internal/alba/business"
 	"github.com/humbkr/albaplayer-server/internal/alba/domain"
 	"github.com/go-gorp/gorp"
 	_ "github.com/mattn/go-sqlite3"
@@ -46,6 +47,7 @@ func InitAlbaDatasource() (ds Datasource, err error) {
 	dbmap.AddTableWithName(domain.Album{}, "albums").SetKeys(true, "Id").AddIndex("AlbumTitleIndex", "nil", []string{"title"})
 	dbmap.AddTableWithName(domain.Track{}, "tracks").SetKeys(true, "Id").AddIndex("TrackTitleIndex", "nil", []string{"title"})
 	dbmap.AddTableWithName(domain.Cover{}, "covers").SetKeys(true, "Id").AddIndex("CoverHashIndex", "nil", []string{"hash"})
+	dbmap.AddTableWithName(business.InternalVariable{}, "variables").SetKeys(false, "Key")
 
 	// Create the tables.
 	err = dbmap.CreateTablesIfNotExists()

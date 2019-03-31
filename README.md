@@ -1,5 +1,5 @@
 # Alba Player (server)
-Minimalistic audio library web player.
+> Minimalistic audio library web player.
 
 ## About
 Alba player is an audio library web-based player optimized for desktop. I was tired of all the desktop audio players available on linux 
@@ -39,8 +39,7 @@ configuration file and run the alba executable from the command line.
 
 **Dependencies:**   
 
-This project uses golang/dep to manage its dependencies. Download it (https://github.com/golang/dep) and and it to your 
-path in order to be able to build the project (or use the provided docker image).
+This project uses go modules.
 
 **Code organization:**   
 

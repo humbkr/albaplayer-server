@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/viper"
 	"errors"
 	"sync"
+	"time"
 )
 
 const CoverPreferredSourceFolder = "folder"
@@ -21,6 +22,7 @@ type LibraryInteractor struct {
 	// TODO Check if the library repo should be an interface here.
 	LibraryRepository LibraryRepository
 	MediaFileRepository MediaFileRepository
+	InternalVariableRepository InternalVariableRepository
 	mutex sync.Mutex
 	LibraryIsUpdating bool
 }
@@ -279,8 +281,16 @@ func (interactor *LibraryInteractor) UpdateLibrary() {
 	interactor.mutex.Lock()
 	interactor.LibraryIsUpdating = true
 
+	interactor.CleanDeadFiles()
 	interactor.CreateCompilationArtist()
 	interactor.MediaFileRepository.ScanMediaFiles(viper.GetString("Library.Path"))
+
+	// Log the last time a scan occurred.
+	var lastUpdated = InternalVariable{
+		Key: "library_last_updated",
+		Value: time.Now().Format("20060102150405"),
+	}
+	interactor.InternalVariableRepository.Save(&lastUpdated)
 
 	interactor.LibraryIsUpdating = false
 	interactor.mutex.Unlock()
