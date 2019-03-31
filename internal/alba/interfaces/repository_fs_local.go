@@ -405,6 +405,10 @@ func getMetadataFromFile(filePath string) (info mediaMetadata, err error) {
 	}
 
 	tags, errTags := tag.ReadFrom(file)
+	if errTags != nil {
+		log.Println("ERROR - Can't read id3 tags of " + filePath)
+	}
+
 	if errTags == nil {
 		// Get all we can from the common tags.
 		info.Format = string(tags.FileType())

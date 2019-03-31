@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/davecgh/go-spew v1.1.0 // indirect
-	github.com/dhowden/tag v0.0.0-20170913225556-e24fc33f60ef
+	github.com/dhowden/tag v0.0.0-20181104225729-a9f04c2798ca
 	github.com/go-gorp/gorp v2.0.0+incompatible
 	github.com/go-sql-driver/mysql v1.4.1 // indirect
 	github.com/graphql-go/graphql v0.7.2
