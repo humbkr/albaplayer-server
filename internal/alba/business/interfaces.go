@@ -34,6 +34,11 @@ type AlbumRepository interface {
 	// Returns an hydrated entity if entity is fund, else an error.
 	Get(id int) (entity domain.Album, err error)
 
+	// GetAlbumMultiple return albums based on filter.
+	//
+	// If no album found, returns an error.
+	GetMultiple(filter EntityFilter) (entity domain.Albums, err error)
+
 	// Gets all entities from the datasource.
 	//
 	// If no entities found, returns an empty collection without error.

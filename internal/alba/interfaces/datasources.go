@@ -2,12 +2,11 @@ package interfaces
 
 import (
 	"database/sql"
-
 	"log"
 
+	"github.com/go-gorp/gorp"
 	"github.com/humbkr/albaplayer-server/internal/alba/business"
 	"github.com/humbkr/albaplayer-server/internal/alba/domain"
-	"github.com/go-gorp/gorp"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/viper"
 )

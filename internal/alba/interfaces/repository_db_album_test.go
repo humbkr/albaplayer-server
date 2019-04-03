@@ -2,6 +2,7 @@ package interfaces
 
 import (
 	"testing"
+	"github.com/humbkr/albaplayer-server/internal/alba/business"
 	"github.com/stretchr/testify/suite"
 	"github.com/stretchr/testify/assert"
 	"log"
@@ -51,6 +52,65 @@ func (suite *AlbumRepoTestSuite) TestGet() {
 	// Test to get a non existing album.
 	album, err = suite.AlbumRepository.Get(99)
 	assert.NotNil(suite.T(), err)
+}
+
+func (suite *AlbumRepoTestSuite) TestGetMultiple() {
+	// TEST RANDOM (note: cannot test randomness).
+	// Test album retrieval.
+	albums, err := suite.AlbumRepository.GetMultiple(business.EntityFilter{
+		Random: true,
+		Limit: 1,
+	})
+
+	assert.Nil(suite.T(), err)
+	assert.NotEmpty(suite.T(), albums)
+
+	album := albums[0]
+	assert.NotNil(suite.T(), album.Id)
+	assert.Empty(suite.T(), album.Tracks)
+
+	// Test hydratation.
+	albums, err = suite.AlbumRepository.GetMultiple(business.EntityFilter{
+		Random: true,
+		Limit: 1,
+		Hydrate: true,
+	})
+
+	assert.Nil(suite.T(), err)
+	assert.NotEmpty(suite.T(), albums)
+
+	album = albums[0]
+	assert.NotNil(suite.T(), album.Id)
+	assert.NotEmpty(suite.T(), album.Tracks)
+
+	// TEST ORDER BY
+	// Test album retrieval.
+	albums, err = suite.AlbumRepository.GetMultiple(business.EntityFilter{
+		Limit: 1,
+		Sort: "AddedAt",
+		SortOrder: "DESC",
+	})
+
+	assert.Nil(suite.T(), err)
+	assert.NotEmpty(suite.T(), albums)
+
+	album = albums[0]
+	assert.Equal(suite.T(), 2, album.Id)
+	assert.Empty(suite.T(), album.Tracks)
+
+	// Test hydratation and results are sorted.
+	albums, err = suite.AlbumRepository.GetLastEntries(2, true)
+	assert.Nil(suite.T(), err)
+	assert.NotEmpty(suite.T(), albums)
+	assert.Equal(suite.T(), 2, len(albums))
+
+	album = albums[0]
+	assert.Equal(suite.T(), 1, album.Id)
+	assert.NotEmpty(suite.T(), album.Tracks)
+
+	album2 := albums[1]
+	assert.Equal(suite.T(), 2, album2.Id)
+	assert.NotEmpty(suite.T(), album2.Tracks)
 }
 
 func (suite *AlbumRepoTestSuite) TestGetAll() {

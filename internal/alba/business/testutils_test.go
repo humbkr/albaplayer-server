@@ -163,15 +163,16 @@ func (m *AlbumRepositoryMock) Get(id int) (entity domain.Album, err error) {
 }
 
 // Returns 3 albums.
-func (m *AlbumRepositoryMock) GetAll(hydrate bool) (entities domain.Albums, err error) {
+func (m *AlbumRepositoryMock) GetMultiple(filter EntityFilter) (entities domain.Albums, err error) {
 	for i := 1; i < 4; i++ {
 		album := domain.Album{
 			Id:    i,
 			Title: "Album #" + strconv.Itoa(i),
 			Year:  "2017",
+			AddedAt: 2019010101 + i,
 		}
 
-		if hydrate {
+		if filter.Hydrate {
 			for j := 1; j < 4; j++ {
 				track := domain.Track{
 					Id: j,
@@ -187,6 +188,11 @@ func (m *AlbumRepositoryMock) GetAll(hydrate bool) (entities domain.Albums, err 
 	}
 
 	return
+}
+
+// Returns 3 albums.
+func (m *AlbumRepositoryMock) GetAll(hydrate bool) (entities domain.Albums, err error) {
+	return m.GetMultiple(EntityFilter{Hydrate: hydrate})
 }
 
 // Returns a valid respones only for name "Album #1" for artistId 1.
@@ -218,6 +224,39 @@ func (m *AlbumRepositoryMock) GetAlbumsForArtist(artistId int, hydrate bool) (en
 				}
 			}
 		}
+	}
+
+	return
+}
+
+// Returns 3 albums.
+func (m *AlbumRepositoryMock) GetRandom(number int, hydrate bool) (entities domain.Albums, err error) {
+	return m.GetAll(hydrate)
+}
+
+// Returns 3 albums.
+func (m *AlbumRepositoryMock) GetLastEntries(number int, hydrate bool) (entities domain.Albums, err error) {
+	for i := 1; i < 4; i++ {
+		album := domain.Album{
+			Id:    i,
+			Title: "Album #" + strconv.Itoa(i),
+			Year:  "2017",
+			AddedAt: 20180101000000 - i,
+		}
+
+		if hydrate {
+			for j := 1; j < 4; j++ {
+				track := domain.Track{
+					Id: j,
+					AlbumId: i,
+					Title: fmt.Sprintf("Track #%v for album #%v", j, i),
+					Path: fmt.Sprintf("/music/Album %v/Track %v.mp3", i, j),
+				}
+				album.Tracks = append(album.Tracks, track)
+			}
+		}
+
+		entities = append(entities, album)
 	}
 
 	return
@@ -397,7 +436,7 @@ type MediaFileRepositoryMock struct{
 	mock.Mock
 }
 
-func (m *MediaFileRepositoryMock) ScanMediaFiles(path string) (int, int) { return 0, 0 }
+func (m *MediaFileRepositoryMock) ScanMediaFiles(path string) (int, int, error) { return 0, 0, nil }
 func (m *MediaFileRepositoryMock) WriteCoverFile(file *domain.Cover, directory string) error { return nil }
 func (m *MediaFileRepositoryMock) RemoveCoverFile(file *domain.Cover, directory string) error { return nil }
 func (m *MediaFileRepositoryMock) DeleteCovers() error { return nil }

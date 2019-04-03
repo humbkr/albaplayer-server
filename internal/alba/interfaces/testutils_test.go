@@ -22,7 +22,7 @@ import (
 Common stuff for repositories tests.
  */
 
-const TestDataDir = "test/"
+const TestDataDir = "../../../test/"
 const TestDatasourceFile = "test.db"
 const TestArtistsFile = TestDataDir + "artists.csv"
 const TestAlbumsFile = TestDataDir + "albums.csv"
@@ -52,6 +52,7 @@ func createTestDatasource() (ds Datasource, err error) {
 	dbmap.AddTableWithName(domain.Album{}, "albums").SetKeys(true, "Id")
 	dbmap.AddTableWithName(domain.Track{}, "tracks").SetKeys(true, "Id")
 	dbmap.AddTableWithName(domain.Cover{}, "covers").SetKeys(true, "Id")
+	dbmap.AddTableWithName(business.InternalVariable{}, "variables").SetKeys(false, "Key")
 
 	// Create the tables.
 	err = dbmap.CreateTablesIfNotExists()
@@ -72,6 +73,7 @@ func resetTestDataSource(ds Datasource) error {
 		dbmap.Exec("DELETE FROM sqlite_sequence WHERE name = 'albums'")
 		dbmap.Exec("DELETE FROM artists")
 		dbmap.Exec("DELETE FROM sqlite_sequence WHERE name = 'artists'")
+		dbmap.Exec("DELETE FROM variables")
 
 		initTestDataSource(ds)
 	}
@@ -130,12 +132,13 @@ func initTestDataSource(ds Datasource) (err error) {
 
 			// Insert the row in database.
 			dbmap.Exec(
-				"INSERT INTO albums(id, artist_id, title, year, cover_id) VALUES(?, ?, ?, ?, ?)",
+				"INSERT INTO albums(id, artist_id, title, year, cover_id, added_at) VALUES(?, ?, ?, ?, ?, ?)",
 				record[0],
 				record[1],
 				record[2],
 				record[3],
 				record[4],
+				record[5],
 			)
 		}
 		file.Close()
@@ -193,6 +196,9 @@ func initTestDataSource(ds Datasource) (err error) {
 			dbmap.Exec("INSERT INTO covers(id, path, hash) VALUES(?, ?, ?)", record[0], record[1], record[2])
 		}
 		file.Close()
+
+		// Internal variables.
+		dbmap.Exec("INSERT INTO variables(key, value) VALUES(?, ?)", "var_key", "var_value")
 	}
 
 	return nil
@@ -257,6 +263,7 @@ type albumRepositoryMock struct{
 
 // Not needed.
 func (m *albumRepositoryMock) Get(id int) (entity domain.Album, err error) {return}
+func (m *albumRepositoryMock) GetMultiple(filter business.EntityFilter) (entities domain.Albums, err error) {return}
 func (m *albumRepositoryMock) GetAll(hydrate bool) (entities domain.Albums, err error) {return}
 func (m *albumRepositoryMock) GetAlbumsForArtist(artistId int, hydrate bool) (entities domain.Albums, err error) {return}
 func (m *albumRepositoryMock) Delete(entity *domain.Album) (err error) {return}
@@ -375,7 +382,7 @@ type mediaRepositoryMock struct{
 }
 
 // Not needed.
-func (m *mediaRepositoryMock) ScanMediaFiles(path string) (int, int) {return 0, 0}
+func (m *mediaRepositoryMock) ScanMediaFiles(path string) (int, int, error) {return 0, 0, nil}
 func (m *mediaRepositoryMock) MediaFileExists(filepath string) bool {return true}
 func (m *mediaRepositoryMock) WriteCoverFile(file *domain.Cover, directory string) error {return nil}
 func (m *mediaRepositoryMock) RemoveCoverFile(file *domain.Cover, directory string) error {return nil}

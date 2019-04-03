@@ -1,3 +1,3 @@
-id,artistId,title,year,coverId
-1,1,"Ænima","1996",0
-2,2,"Album test","2017",0
+id,artistId,title,year,coverId, addedAt
+1,1,"Ænima","1996",0, 20170912235504
+2,2,"Album test","2017",0, 20181124010534

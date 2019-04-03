@@ -419,10 +419,19 @@ func NewGraphQLInteractor(ci *business.LibraryInteractor) *graphQLInteractor {
 				},
 			},
 			"albums": &graphql.Field{
+				// TODO: limit and sort parameters whould be more useful.
 				Type: graphql.NewList(albumType),
 				Args: graphql.FieldConfigArgument{
 					"hydrate": &graphql.ArgumentConfig{
 						Description: "Enable possibility to get tracks from albums list. Default to false.",
+						Type: graphql.Boolean,
+					},
+					"random": &graphql.ArgumentConfig{
+						Description: "Get random albums. Default to false. If true you must also specify a number of albums to return.",
+						Type: graphql.Boolean,
+					},
+					"number": &graphql.ArgumentConfig{
+						Description: "Numbers of albums to return. Used only in conjunction with 'random' and 'last' arguments.",
 						Type: graphql.Boolean,
 					},
 				},

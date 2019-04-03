@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/stretchr/testify/assert"
 	"log"
-	"github.com/humbkr/albaplayer-server/internal/alba/domain"
 )
 
 type InternalVariableRepoTestSuite struct {
@@ -80,15 +79,15 @@ func (suite *InternalVariableRepoTestSuite) TestSave() {
 func (suite *InternalVariableRepoTestSuite) TestDelete() {
 	var varKey = "var_key"
 
-	// Get cover to delete.
+	// Get variable to delete.
 	variable, err := suite.InternalVariableRepository.Get(varKey)
 	assert.Nil(suite.T(), err)
 
-	// Delete cover.
+	// Delete variable.
 	err = suite.InternalVariableRepository.Delete(&variable)
 	assert.Nil(suite.T(), err)
 
-	// Check cover has been removed from the database.
+	// Check variable has been removed from the database.
 	_, err = suite.InternalVariableRepository.Get(varKey)
 	assert.NotNil(suite.T(), err)
 }

@@ -27,6 +27,14 @@ type LibraryInteractor struct {
 	LibraryIsUpdating bool
 }
 
+type EntityFilter struct {
+	Sort string
+	SortOrder string
+	Limit int
+	Hydrate bool
+	Random bool
+}
+
 // Gets an artist by id.
 //
 // If no artist found, returns an error.
@@ -80,6 +88,29 @@ func (interactor *LibraryInteractor) ArtistExists(artistId int) bool {
 // If no album found, returns an error.
 func (interactor *LibraryInteractor) GetAlbum(albumId int) (domain.Album, error) {
 	return interactor.AlbumRepository.Get(albumId)
+}
+
+// GetAlbumMultiple return albums based on filters.
+//
+// If no album found, returns an error.
+func (interactor *LibraryInteractor) GetRandomAlbums(number int, hydrate bool) (domain.Albums, error) {
+	return interactor.AlbumRepository.GetMultiple(EntityFilter{
+		Limit: number,
+		Hydrate: hydrate,
+		Random: true,
+	})
+}
+
+// GetAlbumMultiple return albums based on filters.
+//
+// If no album found, returns an error.
+func (interactor *LibraryInteractor) GetLastAddedAlbums(number int, hydrate bool) (domain.Albums, error) {
+	return interactor.AlbumRepository.GetMultiple(EntityFilter{
+		Limit: number,
+		Hydrate: hydrate,
+		Sort: "AddedAt",
+		SortOrder: "DESC",
+	})
 }
 
 // Gets all albums.

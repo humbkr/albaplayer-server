@@ -2,9 +2,10 @@ package business
 
 import (
 	"testing"
-	"github.com/stretchr/testify/suite"
-	"github.com/stretchr/testify/assert"
+
 	"github.com/humbkr/albaplayer-server/internal/alba/domain"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 type ArtistInteractorTestSuite struct {
@@ -190,6 +191,68 @@ func (suite *AlbumInteractorTestSuite) TestGetAlbumsForArtist() {
 	// Test to get albums for a non existant artist (or an artist without album).
 	albums, err = suite.Library.GetAlbumsForArtist(34, false)
 	assert.NotNil(suite.T(), err)
+}
+
+func (suite *AlbumInteractorTestSuite) TestGetRandomAlbums() {
+	// Test to get albums without tracks.
+	albums, err := suite.Library.GetRandomAlbums(1, false)
+	assert.Nil(suite.T(), err)
+	assert.NotEmpty(suite.T(), albums)
+
+	for _, album := range albums {
+		assert.NotEmpty(suite.T(), album.Id)
+		assert.NotEmpty(suite.T(), album.Title)
+		assert.Empty(suite.T(), album.Tracks)
+	}
+
+	// Test to get albums with tracks.
+	albums, err = suite.Library.GetRandomAlbums(1,true)
+	assert.Nil(suite.T(), err)
+	assert.NotEmpty(suite.T(), albums)
+
+	for _, album := range albums {
+		assert.NotEmpty(suite.T(), album.Id)
+		assert.NotEmpty(suite.T(), album.Title)
+		assert.NotEmpty(suite.T(), album.Tracks)
+	}
+}
+
+func (suite *AlbumInteractorTestSuite) TestLastAddedAlbums() {
+	// Test to get albums without tracks.
+	albums, err := suite.Library.GetLastAddedAlbums(4, false)
+	assert.Nil(suite.T(), err)
+	assert.NotEmpty(suite.T(), albums)
+
+	var added int
+	for _, album := range albums {
+		assert.NotEmpty(suite.T(), album.Id)
+		assert.NotEmpty(suite.T(), album.Title)
+		assert.Empty(suite.T(), album.Tracks)
+
+		// Test albums are ordered by date added desc.
+		if added != 0 {
+			assert.True(suite.T(), added < album.AddedAt)
+		}
+		added = album.AddedAt
+	}
+
+	// Test to get albums with tracks.
+	albums, err = suite.Library.GetLastAddedAlbums(4,true)
+	assert.Nil(suite.T(), err)
+	assert.NotEmpty(suite.T(), albums)
+
+	var added2 int
+	for _, album := range albums {
+		assert.NotEmpty(suite.T(), album.Id)
+		assert.NotEmpty(suite.T(), album.Title)
+		assert.NotEmpty(suite.T(), album.Tracks)
+
+		// Test albums are ordered by date added desc.
+		if added2 != 0 {
+			assert.True(suite.T(), added2 < album.AddedAt)
+		}
+		added2 = album.AddedAt
+	}
 }
 
 func (suite *AlbumInteractorTestSuite) TestSaveAlbum() {
@@ -507,14 +570,14 @@ func (suite *MediaFilesInteractorTestSuite) SetupSuite() {
 	suite.Library = createMockLibraryInteractor()
 }
 
-func (suite *MediaFilesInteractorTestSuite) TestUpdateLibrary() {
-	suite.Library.UpdateLibrary()
-}
-
-func (suite *MediaFilesInteractorTestSuite) TestEraseLibrary() {
-	suite.Library.EraseLibrary()
-}
-
-func (suite *MediaFilesInteractorTestSuite) TestCleanDeadFiles() {
-	suite.Library.CleanDeadFiles()
-}
+//func (suite *MediaFilesInteractorTestSuite) TestUpdateLibrary() {
+//	suite.Library.UpdateLibrary()
+//}
+//
+//func (suite *MediaFilesInteractorTestSuite) TestEraseLibrary() {
+//	suite.Library.EraseLibrary()
+//}
+//
+//func (suite *MediaFilesInteractorTestSuite) TestCleanDeadFiles() {
+//	suite.Library.CleanDeadFiles()
+//}

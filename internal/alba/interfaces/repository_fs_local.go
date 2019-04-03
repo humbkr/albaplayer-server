@@ -11,6 +11,7 @@ import (
 	"path"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/humbkr/albaplayer-server/internal/alba/business"
 	"github.com/humbkr/albaplayer-server/internal/alba/domain"
@@ -304,6 +305,8 @@ func processAlbum(dbTransaction *gorp.Transaction, metadata *mediaMetadata, arti
 			_, err = dbTransaction.Update(&album)
 		} else {
 			// Insert new entity.
+			currentTime := time.Now()
+			album.AddedAt, _ = strconv.Atoi(currentTime.Format(domain.DATE_FORMAT))
 			err = dbTransaction.Insert(&album)
 		}
 
