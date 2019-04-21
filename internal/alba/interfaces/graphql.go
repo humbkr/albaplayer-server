@@ -5,9 +5,10 @@ Defines and initialize the GraphQL schema.
 package interfaces
 
 import (
-	"github.com/graphql-go/graphql"
 	"errors"
 	"strconv"
+
+	"github.com/graphql-go/graphql"
 
 	"github.com/humbkr/albaplayer-server/internal/alba/business"
 	"github.com/humbkr/albaplayer-server/internal/alba/domain"
@@ -116,6 +117,17 @@ var albumType = graphql.NewObject(graphql.ObjectConfig{
 			Resolve: func (p graphql.ResolveParams) (interface{}, error) {
 				if album, ok := p.Source.(domain.Album); ok == true {
 					return album.ArtistId, nil
+				}
+				return nil, nil
+			},
+		},
+		"addedAt": &graphql.Field{
+			Name: "Added at",
+			Description: "Date album was added to the library. Format: YYYY-MM-DD'T'HH:MM:SS",
+			Type: graphql.String,
+			Resolve: func (p graphql.ResolveParams) (interface{}, error) {
+				if album, ok := p.Source.(domain.Album); ok == true {
+					return album.AddedAt, nil
 				}
 				return nil, nil
 			},
@@ -419,7 +431,6 @@ func NewGraphQLInteractor(ci *business.LibraryInteractor) *graphQLInteractor {
 				},
 			},
 			"albums": &graphql.Field{
-				// TODO: limit and sort parameters whould be more useful.
 				Type: graphql.NewList(albumType),
 				Args: graphql.FieldConfigArgument{
 					"hydrate": &graphql.ArgumentConfig{
@@ -427,22 +438,51 @@ func NewGraphQLInteractor(ci *business.LibraryInteractor) *graphQLInteractor {
 						Type: graphql.Boolean,
 					},
 					"random": &graphql.ArgumentConfig{
-						Description: "Get random albums. Default to false. If true you must also specify a number of albums to return.",
+						Description: "Get random albums. Default to false.",
 						Type: graphql.Boolean,
 					},
 					"number": &graphql.ArgumentConfig{
-						Description: "Numbers of albums to return. Used only in conjunction with 'random' and 'last' arguments.",
-						Type: graphql.Boolean,
+						Description: "Numbers of albums to return.",
+						Type: graphql.Int,
+					},
+					"sort": &graphql.ArgumentConfig{
+						Description: "Field to sort albums by.",
+						Type: graphql.String,
+					},
+					"sortOrder": &graphql.ArgumentConfig{
+						Description: "Sort order.",
+						Type: graphql.String,
 					},
 				},
 				Resolve: func (p graphql.ResolveParams) (interface{}, error) {
+					filters := business.EntityFilter{}
 					if p.Args["hydrate"] != nil {
 						if hydrate, ok := p.Args["hydrate"].(bool); ok {
-							return interactor.Library.AlbumRepository.GetAll(hydrate)
+							filters.Hydrate = hydrate
+						}
+					}
+					if p.Args["random"] != nil {
+						if random, ok := p.Args["random"].(bool); ok {
+							filters.Random = random
+						}
+					}
+					if p.Args["number"] != nil {
+						if number, ok := p.Args["number"].(int); ok {
+							filters.Limit = number
+						}
+					}
+					if p.Args["sort"] != nil {
+						if sort, ok := p.Args["sort"].(string); ok {
+							filters.Sort = sort
+						}
+					}
+					if p.Args["sortOrder"] != nil {
+						if sortOrder, ok := p.Args["sortOrder"].(string); ok {
+							filters.SortOrder = sortOrder
 						}
 					}
 
-					return interactor.Library.AlbumRepository.GetAll(false)
+					return interactor.Library.AlbumRepository.GetMultiple(filters)
 				},
 			},
 			"album": &graphql.Field{

@@ -169,7 +169,7 @@ func (m *AlbumRepositoryMock) GetMultiple(filter EntityFilter) (entities domain.
 			Id:    i,
 			Title: "Album #" + strconv.Itoa(i),
 			Year:  "2017",
-			AddedAt: 2019010101 + i,
+			AddedAt: "2018-01-01T00:00:0" + strconv.Itoa(i),
 		}
 
 		if filter.Hydrate {
@@ -241,7 +241,7 @@ func (m *AlbumRepositoryMock) GetLastEntries(number int, hydrate bool) (entities
 			Id:    i,
 			Title: "Album #" + strconv.Itoa(i),
 			Year:  "2017",
-			AddedAt: 20180101000000 - i,
+			AddedAt: "2018-01-01T00:00:0" + strconv.Itoa(4 - i),
 		}
 
 		if hydrate {

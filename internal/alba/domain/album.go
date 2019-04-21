@@ -6,8 +6,8 @@ type Album struct {
 	Year     string `db:"year"`
 	ArtistId int    `db:"artist_id"`
 	CoverId  int    `db:"cover_id"`
+	AddedAt  string `db:"added_at"` // Format: YYYY-MM-DD'T'HH:MM:SS
 	Tracks   Tracks	`db:"-"`
-	AddedAt  int    `db:"added_at"` // Format: YYYYMMDD
 }
 
 type Albums []Album

@@ -223,14 +223,14 @@ func (suite *AlbumInteractorTestSuite) TestLastAddedAlbums() {
 	assert.Nil(suite.T(), err)
 	assert.NotEmpty(suite.T(), albums)
 
-	var added int
+	var added string
 	for _, album := range albums {
 		assert.NotEmpty(suite.T(), album.Id)
 		assert.NotEmpty(suite.T(), album.Title)
 		assert.Empty(suite.T(), album.Tracks)
 
 		// Test albums are ordered by date added desc.
-		if added != 0 {
+		if added != "" {
 			assert.True(suite.T(), added < album.AddedAt)
 		}
 		added = album.AddedAt
@@ -241,14 +241,14 @@ func (suite *AlbumInteractorTestSuite) TestLastAddedAlbums() {
 	assert.Nil(suite.T(), err)
 	assert.NotEmpty(suite.T(), albums)
 
-	var added2 int
+	var added2 string
 	for _, album := range albums {
 		assert.NotEmpty(suite.T(), album.Id)
 		assert.NotEmpty(suite.T(), album.Title)
 		assert.NotEmpty(suite.T(), album.Tracks)
 
 		// Test albums are ordered by date added desc.
-		if added2 != 0 {
+		if added2 != "" {
 			assert.True(suite.T(), added2 < album.AddedAt)
 		}
 		added2 = album.AddedAt

@@ -4,7 +4,7 @@ schema {
 
 type Query {
     album(id: ID!): Album
-    albums(limit: Integer, random: Boolean, sort: String, sortOrder: String): [Album]
+    albums(number: Integer, random: Boolean, sort: String, sortOrder: String): [Album]
     artist(id: ID!): Artist
     artists: [Artist]
     track(id: ID!): Track
@@ -22,6 +22,7 @@ type Album {
     id: ID!
     title: String!
     artist: Artist
+    addedAt: Integer
     tracks: [Track]
 }
 

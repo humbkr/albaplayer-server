@@ -73,7 +73,7 @@ func (ar AlbumDbRepository) GetMultiple(filter business.EntityFilter) (entities 
 			AlbumYear string
 			AlbumArtistId int
 			AlbumCoverId int
-			AlbumAddedAt int
+			AlbumAddedAt string
 			domain.Track
 			// Cannot select domain.album.ArtistId or domain.track.AlbumId because of a Gorp error...
 			// So we have to join on trk.album_id, but then Gorp cannot do the mapping with gorpResult, so we have
@@ -209,7 +209,7 @@ func (ar AlbumDbRepository) Save(entity *domain.Album) (err error) {
 	} else {
 		// Insert new entity.
 		currentTime := time.Now()
-		entity.AddedAt, _ = strconv.Atoi(currentTime.Format(domain.DATE_FORMAT))
+		entity.AddedAt = currentTime.Format(domain.DATE_FORMAT)
 
 		err = ar.AppContext.DB.Insert(entity)
 		return

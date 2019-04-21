@@ -306,7 +306,7 @@ func processAlbum(dbTransaction *gorp.Transaction, metadata *mediaMetadata, arti
 		} else {
 			// Insert new entity.
 			currentTime := time.Now()
-			album.AddedAt, _ = strconv.Atoi(currentTime.Format(domain.DATE_FORMAT))
+			album.AddedAt = currentTime.Format(domain.DATE_FORMAT)
 			err = dbTransaction.Insert(&album)
 		}
 
