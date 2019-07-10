@@ -17,8 +17,6 @@ RUN mkdir /app
 # Set go bin which doesn't appear to be set already
 ENV GOBIN /go/bin
 
-# Install dependency manager
-# RUN go get github.com/golang/dep/...
 # Install live refresh server
 RUN go get github.com/pilu/fresh
 
