@@ -12,6 +12,9 @@ rm -f ${project_root}/build/albaplayer-*
 rm -f ${project_root}/build/version.txt
 mkdir ${project_root}/build/linux ${project_root}/build/macos ${project_root}/build/windows
 
+# Install dependencies
+
+
 # Build for Linux.
 echo "Start build for Linux..."
 env GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -o ${project_root}/build/linux/alba ${project_root}/main.go
