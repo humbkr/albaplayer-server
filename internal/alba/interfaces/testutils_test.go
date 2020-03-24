@@ -2,19 +2,20 @@ package interfaces
 
 import (
 	"database/sql"
-	"github.com/humbkr/albaplayer-server/internal/alba/domain"
-	"log"
-	"github.com/go-gorp/gorp"
-	_ "github.com/mattn/go-sqlite3"
 	"encoding/csv"
-	"os"
-	"io"
-	"github.com/humbkr/albaplayer-server/internal/alba/business"
-	"github.com/stretchr/testify/mock"
 	"errors"
-	"math/rand"
 	"fmt"
+	"io"
+	"log"
+	"math/rand"
+	"os"
 	"strconv"
+
+	"github.com/go-gorp/gorp"
+	"github.com/humbkr/albaplayer-server/internal/alba/business"
+	"github.com/humbkr/albaplayer-server/internal/alba/domain"
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/stretchr/testify/mock"
 )
 
 /*
@@ -22,7 +23,7 @@ import (
 Common stuff for repositories tests.
  */
 
-const TestDataDir = "test/"
+const TestDataDir = "../../../testdata/"
 const TestDatasourceFile = "test.db"
 const TestArtistsFile = TestDataDir + "artists.csv"
 const TestAlbumsFile = TestDataDir + "albums.csv"

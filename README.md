@@ -74,8 +74,11 @@ Available endpoints:
 Note that you need to build the [client app](https://github.com/humbkr/albaplayer-client) separately to access the user interface. By running only the server part
 in this repository you will only have access to the two endpoints mentionned earlier.   
 
-##### Include the client app in the build
+#### Include the client app in the build
 To build the client app, follow the readme at [https://github.com/humbkr/albaplayer-client](https://github.com/humbkr/albaplayer-client).   
 Once the client prod build is generated, dump its contents in the /web directory of this project.
 
 Alternatively you can also get the end-user build on the [official website](https://albaplayer.com) and copy-paste the web directory contents into /web.
+
+#### Test
+From the project root run ``go test ./...``
