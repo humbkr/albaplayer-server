@@ -2,12 +2,11 @@ package interfaces
 
 import (
 	"database/sql"
-
 	"log"
 
+	"github.com/go-gorp/gorp"
 	"github.com/humbkr/albaplayer-server/internal/alba/business"
 	"github.com/humbkr/albaplayer-server/internal/alba/domain"
-	"github.com/go-gorp/gorp"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/viper"
 )
@@ -45,9 +44,13 @@ func InitAlbaDatasource() (ds Datasource, err error) {
 	// Bind tables to objects.
 	dbmap.AddTableWithName(domain.Artist{}, "artists").SetKeys(true, "Id").AddIndex("ArtistNameIndex", "nil", []string{"name"})
 	dbmap.AddTableWithName(domain.Album{}, "albums").SetKeys(true, "Id").AddIndex("AlbumTitleIndex", "nil", []string{"title"})
-	dbmap.AddTableWithName(domain.Track{}, "tracks").SetKeys(true, "Id").AddIndex("TrackTitleIndex", "nil", []string{"title"})
 	dbmap.AddTableWithName(domain.Cover{}, "covers").SetKeys(true, "Id").AddIndex("CoverHashIndex", "nil", []string{"hash"})
 	dbmap.AddTableWithName(business.InternalVariable{}, "variables").SetKeys(false, "Key")
+
+	tracksTable := dbmap.AddTableWithName(domain.Track{}, "tracks")
+	tracksTable.SetKeys(true, "Id")
+	tracksTable.AddIndex("TrackTitleIndex", "nil", []string{"title"})
+	tracksTable.AddIndex("TrackPathIndex", "nil", []string{"path"})
 
 	// Create the tables.
 	err = dbmap.CreateTablesIfNotExists()

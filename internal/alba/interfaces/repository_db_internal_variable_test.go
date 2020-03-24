@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/stretchr/testify/assert"
 	"log"
-	"github.com/humbkr/albaplayer-server/internal/alba/domain"
 )
 
 type InternalVariableRepoTestSuite struct {

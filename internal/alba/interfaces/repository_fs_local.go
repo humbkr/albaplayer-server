@@ -131,6 +131,17 @@ func scanDirectory(path string, dbTransaction *gorp.Transaction) (err error) {
 func processMediaFiles(mediaFiles map[string][]mediaMetadata, cover string, dbTransaction *gorp.Transaction) {
 	uniqueAlbum := len(mediaFiles) < 2
 
+	// Get the artist id of "Various artists" (always created before we start scanning).
+	var variousArtistsId int
+	var entities domain.Artists
+	// TODO Bad! Persistance layer should be abstracted!
+	_, transErr := dbTransaction.Select(&entities, "SELECT * FROM artists WHERE name = ?", business.LibraryDefaultCompilationArtist)
+	if transErr == nil {
+		if len(entities) > 0 {
+			variousArtistsId = entities[0].Id
+		}
+	}
+
 	// Process the media files per album.
 	for _, album := range mediaFiles {
 
@@ -138,23 +149,11 @@ func processMediaFiles(mediaFiles map[string][]mediaMetadata, cover string, dbTr
 		// If at least 2 of the tracks have different artists, this must be a compilation.
 		compilation := false
 
-		currentArtist := album[0].Artist
-		for i := 0; i < len(album) && !compilation; i++ {
-			if i > 0 && album[i].Artist != currentArtist {
-				compilation = true
-			}
-		}
-
-		var variousArtistsId int
-		if compilation {
-			// TODO we shouldn't have to do this for each directory
-			// Get the artist id of "Various artists" (always created before we start scanning).
-			var entities domain.Artists
-			// TODO Bad! Persistance layer should be abstracted!
-			_, transErr := dbTransaction.Select(&entities, "SELECT * FROM artists WHERE name = ?", business.LibraryDefaultCompilationArtist)
-			if transErr == nil {
-				if len(entities) > 0 {
-					variousArtistsId = entities[0].Id
+		if !uniqueAlbum {
+			currentArtist := album[0].Artist
+			for i := 0; i < len(album) && !compilation; i++ {
+				if i > 0 && album[i].Artist != currentArtist {
+					compilation = true
 				}
 			}
 		}
@@ -323,30 +322,25 @@ func processAlbum(dbTransaction *gorp.Transaction, metadata *mediaMetadata, arti
 //
 // TODO: Use checksum from tag.Sum() to search for existing track for an artist + album.
 func processTrack(dbTransaction *gorp.Transaction, metadata *mediaMetadata, artistId int, albumId int, coverId int) (id int, err error) {
-	if metadata.Title == "" {
-		return 0, errors.New("no track title provided")
-	}
-
 	track := domain.Track{}
+
 	// See if the track exists and if so instanciate it with existing data.
 	var entities domain.Tracks
 	// TODO Bad! Persistance layer should be abstracted!
-	_, transErr := dbTransaction.Select(&entities, "SELECT * FROM tracks WHERE title = ? AND artist_id = ? AND album_id = ?", metadata.Title, artistId, albumId)
-	if transErr == nil {
-		if len(entities) > 0 {
-			track = entities[0]
-		}
+	_, transErr := dbTransaction.Select(&entities, "SELECT * FROM tracks WHERE path = ?", metadata.Path)
+	if transErr == nil && len(entities) > 0 {
+		track = entities[0]
 	}
 
-	track.Title = metadata.Title
 	track.ArtistId = artistId
 	track.AlbumId = albumId
+	track.CoverId = coverId
+	track.Title = metadata.Title
 	track.Number = metadata.Track
 	track.Disc = metadata.Disc
 	track.Genre = metadata.Genre
 	track.Duration = metadata.Duration
 	track.Path = metadata.Path
-	track.CoverId = coverId
 
 	if track.Id != 0 {
 		// Update.
@@ -356,11 +350,7 @@ func processTrack(dbTransaction *gorp.Transaction, metadata *mediaMetadata, arti
 		err = dbTransaction.Insert(&track)
 	}
 
-	if err == nil {
-		id = track.Id
-	}
-
-	return
+	return track.Id, err
 }
 
 // Saves a cover info in the database and filesystem.

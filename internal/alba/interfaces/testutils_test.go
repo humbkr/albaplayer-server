@@ -205,6 +205,7 @@ func createMockLibraryInteractor() (*business.LibraryInteractor) {
 	interactor.TrackRepository = new(trackRepositoryMock)
 	interactor.CoverRepository = new(coverRepositoryMock)
 	interactor.MediaFileRepository = new(mediaRepositoryMock)
+	interactor.InternalVariableRepository = new(InternalVariableRepositoryMock)
 
 	return interactor
 }
@@ -375,8 +376,22 @@ type mediaRepositoryMock struct{
 }
 
 // Not needed.
-func (m *mediaRepositoryMock) ScanMediaFiles(path string) (int, int) {return 0, 0}
+func (m *mediaRepositoryMock) ScanMediaFiles(path string) (int, int, error) {return 0, 0, nil}
 func (m *mediaRepositoryMock) MediaFileExists(filepath string) bool {return true}
 func (m *mediaRepositoryMock) WriteCoverFile(file *domain.Cover, directory string) error {return nil}
 func (m *mediaRepositoryMock) RemoveCoverFile(file *domain.Cover, directory string) error {return nil}
 func (m *mediaRepositoryMock) DeleteCovers() error {return nil}
+
+/*
+Mock for internal variable repository.
+*/
+
+type InternalVariableRepositoryMock struct{
+	mock.Mock
+}
+
+// Not needed.
+func (m *InternalVariableRepositoryMock) Get(key string) (variable business.InternalVariable, err error) {return}
+func (m *InternalVariableRepositoryMock) Save(variable *business.InternalVariable) (err error) {return}
+func (m *InternalVariableRepositoryMock) Delete(variable *business.InternalVariable) (err error) {return}
+func (m *InternalVariableRepositoryMock) Exists(key string) bool {return true}
