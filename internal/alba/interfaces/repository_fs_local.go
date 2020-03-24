@@ -50,10 +50,8 @@ type mediaMetadata struct {
 	Track   	int
 	Disc    	string // Format: <number>/<total>
 	Picture 	*tag.Picture
-
-	Duration int
-
-	Path string
+	Duration 	int
+	Path 		string
 }
 
 // Implements business.MediaFileRepository.
@@ -75,14 +73,26 @@ func (r LocalFilesystemRepository) ScanMediaFiles(path string) (processed int, a
 	}
 
 	dbTransaction, _ := gorpDbMap.Begin()
-	err = scanDirectory(path, dbTransaction)
+
+	// Get the artist id of "Various artists" (always created before we start scanning).
+	var variousArtistsId int
+	var entities domain.Artists
+	_, transErr := dbTransaction.Select(&entities, "SELECT * FROM artists WHERE name = ?", business.LibraryDefaultCompilationArtist)
+	if transErr == nil {
+		if len(entities) > 0 {
+			variousArtistsId = entities[0].Id
+		}
+	}
+
+
+	err = scanDirectory(path, variousArtistsId, dbTransaction)
 	dbTransaction.Commit()
 
 	return
 }
 
 // Recursively browses a directory and import / update all the audio files in the database.
-func scanDirectory(path string, dbTransaction *gorp.Transaction) (err error) {
+func scanDirectory(path string, variousArtistsId int, dbTransaction *gorp.Transaction) (err error) {
 	if _, err = os.Stat(path); os.IsNotExist(err) {
 		return
 	}
@@ -105,7 +115,7 @@ func scanDirectory(path string, dbTransaction *gorp.Transaction) (err error) {
 
 		if file.IsDir() {
 			// Recursion.
-			scanDirectory(filePath, dbTransaction)
+			scanDirectory(filePath, variousArtistsId, dbTransaction)
 		} else if matched, _ := filepath.Match("*.mp3", strings.ToLower(file.Name())); matched {
 			// Get ID3 metadata and add it to an array.
 			metadata, err := getMetadataFromFile(filePath)
@@ -114,7 +124,7 @@ func scanDirectory(path string, dbTransaction *gorp.Transaction) (err error) {
 				if len(metadata.Album) > 0 {
 					mediaFiles[metadata.Album] = append(mediaFiles[metadata.Album], metadata)
 				} else {
-					mediaFiles[business.LibraryDefaultArtist] = append(mediaFiles[business.LibraryDefaultArtist], metadata)
+					mediaFiles[business.LibraryDefaultAlbum] = append(mediaFiles[business.LibraryDefaultAlbum], metadata)
 				}
 			}
 		} else if len(potentialAlbumCover) == 0 && isValidCoverFile(file.Name()) {
@@ -123,24 +133,14 @@ func scanDirectory(path string, dbTransaction *gorp.Transaction) (err error) {
 		}
 	}
 
-	processMediaFiles(mediaFiles, potentialAlbumCover, dbTransaction)
+	processMediaFiles(mediaFiles, potentialAlbumCover, variousArtistsId, dbTransaction)
 
 	return
 }
 
-func processMediaFiles(mediaFiles map[string][]mediaMetadata, cover string, dbTransaction *gorp.Transaction) {
+func processMediaFiles(mediaFiles map[string][]mediaMetadata, cover string, variousArtistsId int, dbTransaction *gorp.Transaction) {
+	// MediaFiles is a map of albums found in one directory.
 	uniqueAlbum := len(mediaFiles) < 2
-
-	// Get the artist id of "Various artists" (always created before we start scanning).
-	var variousArtistsId int
-	var entities domain.Artists
-	// TODO Bad! Persistance layer should be abstracted!
-	_, transErr := dbTransaction.Select(&entities, "SELECT * FROM artists WHERE name = ?", business.LibraryDefaultCompilationArtist)
-	if transErr == nil {
-		if len(entities) > 0 {
-			variousArtistsId = entities[0].Id
-		}
-	}
 
 	// Process the media files per album.
 	for _, album := range mediaFiles {
@@ -158,8 +158,25 @@ func processMediaFiles(mediaFiles map[string][]mediaMetadata, cover string, dbTr
 			}
 		}
 
+		// If there is only one album in the directory and we found a valid cover file, in this same directory,
+		// we can directly add the cover to the database.
+		// If there are multiple albums in the directory, we will use track info to try to get a cover.
+		var albumCoverId int
+		if uniqueAlbum && len(cover) > 0 {
+			albumCover, errCover := getMediaCoverFromImageFile(cover)
+			if errCover != nil {
+				// TODO devise a decent logging system.
+				log.Println(errCover)
+			} else {
+				albumCoverId, errCover = processCover(dbTransaction, albumCover)
+				if errCover != nil {
+					// TODO devise a decent logging system.
+					log.Println(errCover)
+				}
+			}
+		}
+
 		// Now we process the metadata to populate the library.
-		// TODO: This could be more efficient as we do the same album process for each track.
 		for _, metadataTrack := range album {
 			if compilation {
 				metadataTrack.AlbumArtist = business.LibraryDefaultCompilationArtist
@@ -167,25 +184,8 @@ func processMediaFiles(mediaFiles map[string][]mediaMetadata, cover string, dbTr
 
 			var artistId int
 			var albumId int
-			var albumCoverId int
 
 			artistId, _ = processArtist(dbTransaction, &metadataTrack)
-
-			if uniqueAlbum && len(cover) > 0 {
-				// There is only one album in the directory and we found a valid cover file, so add the cover to the
-				// database.
-				albumCover, errCover := getMediaCoverFromImageFile(cover)
-				if errCover != nil {
-					// TODO devise a decent logging system.
-					log.Println(errCover)
-				} else {
-					albumCoverId, errCover = processCover(dbTransaction, albumCover)
-					if errCover != nil {
-						// TODO devise a decent logging system.
-						log.Println(errCover)
-					}
-				}
-			}
 
 			albumArtistId := artistId
 			if compilation {
@@ -246,6 +246,7 @@ func processArtist(dbTransaction *gorp.Transaction, metadata *mediaMetadata) (id
 	// Process artist if any.
 	if metadata.Artist != "" {
 		artist := domain.Artist{}
+
 		// See if the artist exists and if so instanciate it with existing data.
 		var entities domain.Artists
 		// TODO Bad! Persistance layer should be abstracted!
@@ -294,7 +295,7 @@ func processAlbum(dbTransaction *gorp.Transaction, metadata *mediaMetadata, arti
 
 		album.Title = metadata.Album
 		album.ArtistId = artistId
-		// TODO Track all the years from an album tracks and compute the final value.
+		// TODO Track all the years from an album tracks and compute the final value (improvement).
 		album.Year = metadata.Year
 		album.CoverId = coverId
 
@@ -319,8 +320,6 @@ func processAlbum(dbTransaction *gorp.Transaction, metadata *mediaMetadata, arti
 // Saves a track info in the database.
 //
 // Returns a track id.
-//
-// TODO: Use checksum from tag.Sum() to search for existing track for an artist + album.
 func processTrack(dbTransaction *gorp.Transaction, metadata *mediaMetadata, artistId int, albumId int, coverId int) (id int, err error) {
 	track := domain.Track{}
 
@@ -400,12 +399,18 @@ func getMetadataFromFile(filePath string) (info mediaMetadata, err error) {
 	}
 
 	if errTags == nil {
+		var artist = sanitizeString(tags.AlbumArtist())
+		if len(artist) == 0 {
+			artist = business.LibraryDefaultArtist
+		}
+
+
 		// Get all we can from the common tags.
 		info.Format = string(tags.FileType())
 		info.Title = sanitizeString(tags.Title())
 		info.Album = sanitizeString(tags.Album())
 		info.AlbumArtist = sanitizeString(tags.AlbumArtist())
-		info.Artist = sanitizeString(tags.Artist())
+		info.Artist = artist
 		info.Genre = sanitizeString(tags.Genre())
 		if tags.Year() != 0 {
 			info.Year = strconv.Itoa(tags.Year())
