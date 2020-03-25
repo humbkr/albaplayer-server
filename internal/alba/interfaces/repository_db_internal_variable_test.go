@@ -36,7 +36,7 @@ func (suite *InternalVariableRepoTestSuite) TearDownSuite() {
 }
 
 func (suite *InternalVariableRepoTestSuite) SetupTest() {
-	resetTestDataSource(suite.InternalVariableRepository.AppContext.DB)
+	_ = resetTestDataSource(suite.InternalVariableRepository.AppContext.DB)
 }
 
 func (suite *InternalVariableRepoTestSuite) TestGet() {
@@ -46,7 +46,7 @@ func (suite *InternalVariableRepoTestSuite) TestGet() {
 	assert.Equal(suite.T(), "var_key", variable.Key)
 	assert.Equal(suite.T(), "var_value", variable.Value)
 
-	// Test to get a non existing artist.
+	// Test to get a non existing variable.
 	variable, err = suite.InternalVariableRepository.Get("doesnotexist")
 	assert.NotNil(suite.T(), err)
 }
@@ -54,8 +54,8 @@ func (suite *InternalVariableRepoTestSuite) TestGet() {
 func (suite *InternalVariableRepoTestSuite) TestSave() {
 	// Test to save a new variable.
 	newVariable := &business.InternalVariable{
-		Key: "var_key",
-		Value: "var_value",
+		Key: "var_key_new",
+		Value: "var_value_new",
 	}
 
 	err := suite.InternalVariableRepository.Save(newVariable)
@@ -63,8 +63,8 @@ func (suite *InternalVariableRepoTestSuite) TestSave() {
 
 	insertedNewVariable, errInsert := suite.InternalVariableRepository.Get(newVariable.Key)
 	assert.Nil(suite.T(), errInsert)
-	assert.Equal(suite.T(), "var_key", insertedNewVariable.Key)
-	assert.Equal(suite.T(), "var_value", insertedNewVariable.Value)
+	assert.Equal(suite.T(), "var_key_new", insertedNewVariable.Key)
+	assert.Equal(suite.T(), "var_value_new", insertedNewVariable.Value)
 
 	// Test to update the variable value.
 	insertedNewVariable.Value = "var_value_mod"

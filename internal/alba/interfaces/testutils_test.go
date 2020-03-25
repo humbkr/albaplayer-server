@@ -1,7 +1,6 @@
 package interfaces
 
 import (
-	"database/sql"
 	"encoding/csv"
 	"errors"
 	"fmt"
@@ -34,33 +33,7 @@ const TestFSEmptyLibDir = TestDataDir + "empty_library"
 
 // Initialises the application test datasource.
 func createTestDatasource() (ds Datasource, err error) {
-	// Create database file.
-	connection, err := sql.Open("sqlite3", os.TempDir() + TestDatasourceFile)
-	if err != nil {
-		return
-	}
-
-	// Check database is reachable.
-	if err = connection.Ping(); err != nil {
-		return
-	}
-
-	// Construct a gorp DbMap.
-	dbmap := &gorp.DbMap{Db: connection, Dialect: gorp.SqliteDialect{}}
-
-	// Bind tables to objects.
-	dbmap.AddTableWithName(domain.Artist{}, "artists").SetKeys(true, "Id")
-	dbmap.AddTableWithName(domain.Album{}, "albums").SetKeys(true, "Id")
-	dbmap.AddTableWithName(domain.Track{}, "tracks").SetKeys(true, "Id")
-	dbmap.AddTableWithName(domain.Cover{}, "covers").SetKeys(true, "Id")
-
-	// Create the tables.
-	err = dbmap.CreateTablesIfNotExists()
-	if err != nil {
-		log.Fatalln("Create tables failed", err)
-	}
-
-	return dbmap, nil
+	return InitAlbaDatasource("sqlite3", os.TempDir() + TestDatasourceFile)
 }
 
 func resetTestDataSource(ds Datasource) error {
@@ -73,6 +46,8 @@ func resetTestDataSource(ds Datasource) error {
 		dbmap.Exec("DELETE FROM sqlite_sequence WHERE name = 'albums'")
 		dbmap.Exec("DELETE FROM artists")
 		dbmap.Exec("DELETE FROM sqlite_sequence WHERE name = 'artists'")
+		dbmap.Exec("DELETE FROM variables")
+		dbmap.Exec("DELETE FROM sqlite_sequence WHERE name = 'variables'")
 
 		initTestDataSource(ds)
 	}
@@ -194,6 +169,9 @@ func initTestDataSource(ds Datasource) (err error) {
 			dbmap.Exec("INSERT INTO covers(id, path, hash) VALUES(?, ?, ?)", record[0], record[1], record[2])
 		}
 		file.Close()
+
+		// Variables
+		dbmap.Exec("INSERT INTO variables(key, value) VALUES('var_key', 'var_value')")
 	}
 
 	return nil

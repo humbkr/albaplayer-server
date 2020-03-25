@@ -399,7 +399,7 @@ func getMetadataFromFile(filePath string) (info mediaMetadata, err error) {
 	}
 
 	if errTags == nil {
-		var artist = sanitizeString(tags.AlbumArtist())
+		var artist = sanitizeString(tags.Artist())
 		if len(artist) == 0 {
 			artist = business.LibraryDefaultArtist
 		}

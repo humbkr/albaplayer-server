@@ -51,7 +51,7 @@ func InitApp() business.LibraryInteractor {
 
 	// Create app context.
 	var appContext interfaces.AppContext
-	datasource, err := interfaces.InitAlbaDatasource()
+	datasource, err := interfaces.InitAlbaDatasource(viper.GetString("DB.driver"), viper.GetString("DB.file"))
 	if err != nil {
 		panic(fmt.Errorf("Error during the application context creation: %s \n", err))
 	}

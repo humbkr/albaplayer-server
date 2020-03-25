@@ -1,6 +1,7 @@
 package interfaces
 
 import (
+	"github.com/humbkr/albaplayer-server/internal/alba/business"
 	"github.com/stretchr/testify/suite"
 	"testing"
 	"github.com/stretchr/testify/assert"
@@ -71,7 +72,7 @@ func (suite *LocalFSRepoTestSuite) TestMediaFileExists() {
 	exists := suite.LocalFSRepository.MediaFileExists(TestFSLibDir + "/no artist - no album - no title.mp3")
 	assert.True(suite.T(), exists)
 
-	// Test with an existing media file.
+	// Test with a non existing media file.
 	exists = suite.LocalFSRepository.MediaFileExists(TestFSLibDir + "/whatever.mp3")
 	assert.False(suite.T(), exists)
 }
@@ -116,7 +117,8 @@ func (suite *LocalFSRepoTestSuite) TestGetMetadataFromFile() {
 	assert.Equal(suite.T(), "MP3", meta.Format)
 	assert.Equal(suite.T(), "No artist - no album - Track #1", meta.Title)
 	assert.Empty(suite.T(), meta.Album)
-	assert.Empty(suite.T(), meta.Artist)
+	assert.Equal(suite.T(), business.LibraryDefaultArtist, meta.Artist)
+	assert.Empty(suite.T(), meta.AlbumArtist)
 	assert.Equal(suite.T(), "Genre #5", meta.Genre)
 	assert.Equal(suite.T(), "2017", meta.Year)
 	assert.Equal(suite.T(), 1, meta.Track)

@@ -8,7 +8,6 @@ import (
 	"github.com/humbkr/albaplayer-server/internal/alba/business"
 	"github.com/humbkr/albaplayer-server/internal/alba/domain"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/spf13/viper"
 )
 
 /**
@@ -27,8 +26,8 @@ type Datasource interface {
 /**
 Initialiase the application main datasource.
  */
-func InitAlbaDatasource() (ds Datasource, err error) {
-	connection, err := sql.Open(viper.GetString("DB.driver"), viper.GetString("DB.file"))
+func InitAlbaDatasource(dbDriver string, dbFile string) (ds Datasource, err error) {
+	connection, err := sql.Open(dbDriver, dbFile)
 	if err != nil {
 		return
 	}
