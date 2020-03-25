@@ -24,7 +24,7 @@ func TestLocalFSRepoTestSuite(t *testing.T) {
 func (suite *LocalFSRepoTestSuite) SetupSuite() {
 	coversDir := os.TempDir() + "covers"
 	if _, err := os.Stat(coversDir); os.IsNotExist(err) {
-		os.Mkdir(coversDir, 0755)
+		_ = os.Mkdir(coversDir, 0755)
 	}
 	viper.Set("Covers.Directory", coversDir)
 
@@ -39,7 +39,7 @@ func (suite *LocalFSRepoTestSuite) SetupSuite() {
 func (suite *LocalFSRepoTestSuite) TearDownSuite() {
 	coversDir := os.TempDir() + string(os.PathSeparator) + "covers"
 	if _, err := os.Stat(coversDir); err == nil {
-		os.Remove(coversDir)
+		_ = os.Remove(coversDir)
 	}
 }
 
@@ -50,21 +50,114 @@ Blackbox tests.
  */
 
 func (suite *LocalFSRepoTestSuite) TestScanMediaFiles() {
-	processed, added, err := suite.LocalFSRepository.ScanMediaFiles(TestFSLibDir)
-	assert.Nil(suite.T(), err)
-	// TODO change test once return values computing is coded.
-	assert.Equal(suite.T(), 0, processed)
-	assert.Equal(suite.T(), 0, added)
-
 	// Test with non existing directory.
-	_, _, err = suite.LocalFSRepository.ScanMediaFiles("/what/ever")
+	_, _, err := suite.LocalFSRepository.ScanMediaFiles("/what/ever")
 	assert.NotNil(suite.T(), err)
 
 	// Test with empty directory.
 	_, _, err = suite.LocalFSRepository.ScanMediaFiles(TestFSEmptyLibDir)
 	assert.Nil(suite.T(), err)
 
-	// TODO test everything has been inserted in database.
+	processed, added, err := suite.LocalFSRepository.ScanMediaFiles(TestFSLibDir)
+	assert.Nil(suite.T(), err)
+	// TODO change test once return values computing is coded.
+	assert.Equal(suite.T(), 0, processed)
+	assert.Equal(suite.T(), 0, added)
+
+	// Test that info has been inserted in database.
+	// Test track.
+	var track = domain.Track{}
+	errGet := suite.LocalFSRepository.AppContext.DB.SelectOne(&track, "SELECT * FROM tracks WHERE title = ?", "Artist #2 - Album #1 - Track #1")
+	assert.Nil(suite.T(), errGet)
+	assert.Equal(suite.T(), "Artist #2 - Album #1 - Track #1", track.Title)
+	assert.Equal(suite.T(), 0, track.CoverId)
+	assert.Equal(suite.T(), "1/2", track.Disc)
+	assert.Equal(suite.T(), 1, track.Number)
+	// TODO Cannot test duration with the test file.
+	assert.Equal(suite.T(), 0, track.Duration)
+	assert.Equal(suite.T(), "Genre #3", track.Genre)
+	assert.Equal(suite.T(), "../../../testdata/mp3/artist 2/Artist 2 - Album 1 - Track 1.mp3", track.Path)
+
+	// Test the album of the track.
+	var album = domain.Album{}
+	errGetAlbum := suite.LocalFSRepository.AppContext.DB.SelectOne(&album, "SELECT * FROM albums WHERE id = ?", track.AlbumId)
+	assert.Nil(suite.T(), errGetAlbum)
+	assert.Equal(suite.T(), "Artist #2 - Album #1", album.Title)
+	assert.Equal(suite.T(), "2017", album.Year)
+	assert.Equal(suite.T(), 0, album.CoverId)
+
+	// Test the artist of the track.
+	var artist = domain.Artist{}
+	errGetArtist := suite.LocalFSRepository.AppContext.DB.SelectOne(&artist, "SELECT * FROM artists WHERE id = ?", track.ArtistId)
+	assert.Nil(suite.T(), errGetArtist)
+	assert.Equal(suite.T(), "Artist #2", artist.Name)
+
+	// TODO test more, this is not exhaustive.
+}
+
+func (suite *LocalFSRepoTestSuite) TestScanMediaFilesUpdate() {
+	_, _, err := suite.LocalFSRepository.ScanMediaFiles(TestFSLibDir)
+	assert.Nil(suite.T(), err)
+
+	// Test track.
+	var track = domain.Track{}
+	errGet := suite.LocalFSRepository.AppContext.DB.SelectOne(&track, "SELECT * FROM tracks WHERE title = ?", "Artist #2 - Album #1 - Track #1")
+	assert.Nil(suite.T(), errGet)
+
+	// Test the album of the track.
+	var album = domain.Album{}
+	errGetAlbum := suite.LocalFSRepository.AppContext.DB.SelectOne(&album, "SELECT * FROM albums WHERE id = ?", track.AlbumId)
+	assert.Nil(suite.T(), errGetAlbum)
+
+	// Test the artist of the track.
+	var artist = domain.Artist{}
+	errGetArtist := suite.LocalFSRepository.AppContext.DB.SelectOne(&artist, "SELECT * FROM artists WHERE id = ?", track.ArtistId)
+	assert.Nil(suite.T(), errGetArtist)
+
+	// Now test to modify tracks metadata: artist name, album name, track name, rescan the files, and make sure the
+	// db is up to date and that there are no ghost entries.
+	track.Title = "New track title"
+	album.Title = "New album title"
+	artist.Name = "New artist name"
+
+	_, errUpdate := suite.LocalFSRepository.AppContext.DB.Update(&track)
+	assert.Nil(suite.T(), errUpdate)
+	_, errUpdate = suite.LocalFSRepository.AppContext.DB.Update(&album)
+	assert.Nil(suite.T(), errUpdate)
+	_, errUpdate = suite.LocalFSRepository.AppContext.DB.Update(&artist)
+	assert.Nil(suite.T(), errUpdate)
+
+	var trackUpdated = domain.Track{}
+	var albumUpdated = domain.Album{}
+	var artistUpdated = domain.Artist{}
+	errGet = suite.LocalFSRepository.AppContext.DB.SelectOne(&trackUpdated, "SELECT * FROM tracks WHERE title = ?", "New track title")
+	assert.Nil(suite.T(), errGet)
+	errGet = suite.LocalFSRepository.AppContext.DB.SelectOne(&trackUpdated, "SELECT * FROM tracks WHERE title = ?", "Artist #2 - Album #1 - Track #1")
+	assert.NotNil(suite.T(), errGet)
+	errGet = suite.LocalFSRepository.AppContext.DB.SelectOne(&albumUpdated, "SELECT * FROM albums WHERE title = ?", "New album title")
+	assert.Nil(suite.T(), errGet)
+	errGet = suite.LocalFSRepository.AppContext.DB.SelectOne(&albumUpdated, "SELECT * FROM albums WHERE title = ?", "Artist #2 - Album #1")
+	assert.NotNil(suite.T(), errGet)
+	errGet = suite.LocalFSRepository.AppContext.DB.SelectOne(&artistUpdated, "SELECT * FROM artists WHERE name = ?", "New artist name")
+	assert.Nil(suite.T(), errGet)
+	errGet = suite.LocalFSRepository.AppContext.DB.SelectOne(&artistUpdated, "SELECT * FROM artists WHERE name = ?", "Artist #2")
+	assert.NotNil(suite.T(), errGet)
+
+	_, _, err = suite.LocalFSRepository.ScanMediaFiles(TestFSLibDir)
+	assert.Nil(suite.T(), err)
+
+	errGet = suite.LocalFSRepository.AppContext.DB.SelectOne(&trackUpdated, "SELECT * FROM tracks WHERE title = ?", "New track title")
+	assert.NotNil(suite.T(), errGet)
+	errGet = suite.LocalFSRepository.AppContext.DB.SelectOne(&trackUpdated, "SELECT * FROM tracks WHERE title = ?", "Artist #2 - Album #1 - Track #1")
+	assert.Nil(suite.T(), errGet)
+	errGet = suite.LocalFSRepository.AppContext.DB.SelectOne(&albumUpdated, "SELECT * FROM albums WHERE title = ?", "New album title")
+	assert.NotNil(suite.T(), errGet)
+	errGet = suite.LocalFSRepository.AppContext.DB.SelectOne(&albumUpdated, "SELECT * FROM albums WHERE title = ?", "Artist #2 - Album #1")
+	assert.Nil(suite.T(), errGet)
+	errGet = suite.LocalFSRepository.AppContext.DB.SelectOne(&artistUpdated, "SELECT * FROM artists WHERE name = ?", "New artist name")
+	assert.NotNil(suite.T(), errGet)
+	errGet = suite.LocalFSRepository.AppContext.DB.SelectOne(&artistUpdated, "SELECT * FROM artists WHERE name = ?", "Artist #2")
+	assert.Nil(suite.T(), errGet)
 }
 
 func (suite *LocalFSRepoTestSuite) TestMediaFileExists() {
