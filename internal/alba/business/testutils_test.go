@@ -131,6 +131,9 @@ func (m ArtistRepositoryMock) Exists(id int) bool {
 	return id == 1
 }
 
+func (m ArtistRepositoryMock) CleanUp() error {return nil}
+
+
 /* Mock for album repository. */
 
 type AlbumRepositoryMock struct{
@@ -245,6 +248,8 @@ func (m *AlbumRepositoryMock) Delete(entity *domain.Album) (err error) {
 func (m AlbumRepositoryMock) Exists(id int) bool {
 	return id == 1
 }
+
+func (m AlbumRepositoryMock) CleanUp() error {return nil}
 
 
 /* Mock for track repository. */

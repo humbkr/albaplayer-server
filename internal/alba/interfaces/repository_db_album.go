@@ -167,6 +167,12 @@ func (ar AlbumDbRepository) Exists(id int) bool {
 	return err == nil
 }
 
+// Removes artists without tracks drom DB.
+func (ar AlbumDbRepository) CleanUp() error {
+	_, err := ar.AppContext.DB.Exec("DELETE FROM albums WHERE NOT EXISTS (SELECT id FROM tracks WHERE tracks.album_id = albums.id)")
+	return err
+}
+
 /**
 Helper function to populate tracks.
  */

@@ -515,6 +515,10 @@ func (suite *MediaFilesInteractorTestSuite) TestEraseLibrary() {
 	suite.Library.EraseLibrary()
 }
 
-func (suite *MediaFilesInteractorTestSuite) TestCleanDeadFiles() {
-	suite.Library.CleanDeadFiles()
+func (suite *MediaFilesInteractorTestSuite) TestCleanUpLibrary() {
+	suite.Library.CleanUpLibrary()
+}
+
+func (suite *MediaFilesInteractorTestSuite) TestCreateCompilationArtist() {
+	_ = suite.Library.CreateCompilationArtist()
 }

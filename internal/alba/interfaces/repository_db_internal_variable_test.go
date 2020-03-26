@@ -74,6 +74,14 @@ func (suite *InternalVariableRepoTestSuite) TestSave() {
 	updatedVariable, errGetMod := suite.InternalVariableRepository.Get(newVariable.Key)
 	assert.Nil(suite.T(), errGetMod)
 	assert.Equal(suite.T(), "var_value_mod", updatedVariable.Value)
+
+	// Test to set a variable without a key.
+	newVariableNoKey := business.InternalVariable{
+		Key: "",
+		Value: "var_value_new",
+	}
+	errNoKey := suite.InternalVariableRepository.Save(&newVariableNoKey)
+	assert.NotNil(suite.T(), errNoKey)
  }
 
 func (suite *InternalVariableRepoTestSuite) TestDelete() {

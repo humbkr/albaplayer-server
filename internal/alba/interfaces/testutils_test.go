@@ -202,6 +202,7 @@ func (m *artistRepositoryMock) Get(id int) (entity domain.Artist, err error) {re
 func (m *artistRepositoryMock) GetAll(hydrate bool) (entities domain.Artists, err error) {return}
 func (m *artistRepositoryMock) Delete(entity *domain.Artist) (err error) {return}
 func (m artistRepositoryMock) Exists(id int) bool {return true}
+func (m artistRepositoryMock) CleanUp() error {return nil}
 
 // Returns a valid respones only for name "Artist #1".
 func (m *artistRepositoryMock) GetByName(name string) (entity domain.Artist, err error) {
@@ -241,6 +242,7 @@ func (m *albumRepositoryMock) GetAll(hydrate bool) (entities domain.Albums, err 
 func (m *albumRepositoryMock) GetAlbumsForArtist(artistId int, hydrate bool) (entities domain.Albums, err error) {return}
 func (m *albumRepositoryMock) Delete(entity *domain.Album) (err error) {return}
 func (m albumRepositoryMock) Exists(id int) bool {return false}
+func (m albumRepositoryMock) CleanUp() error {return nil}
 
 // Returns a valid response for name "Album #1" for artistId 1.
 // Returns a valid response for name "Album #2" for empty artistId.

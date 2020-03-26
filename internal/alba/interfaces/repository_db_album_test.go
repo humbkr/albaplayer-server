@@ -230,3 +230,21 @@ func (suite *AlbumRepoTestSuite) TestExists() {
 	exists = suite.AlbumRepository.Exists(543)
 	assert.False(suite.T(), exists)
 }
+
+func (suite *AlbumRepoTestSuite) TestCleanUp() {
+	album := domain.Album{
+		Title: "Album without tracks",
+	}
+	err := suite.AlbumRepository.Save(&album)
+	assert.Nil(suite.T(), err)
+
+	nonExistantAlbum := domain.Album{}
+	errGet := suite.AlbumRepository.AppContext.DB.SelectOne(&nonExistantAlbum, "SELECT * FROM albums WHERE title = ?", album.Title)
+	assert.Nil(suite.T(), errGet)
+
+	errCleanUp := suite.AlbumRepository.CleanUp()
+	assert.Nil(suite.T(), errCleanUp)
+
+	errGet = suite.AlbumRepository.AppContext.DB.SelectOne(&nonExistantAlbum, "SELECT * FROM albums WHERE title = ?", album.Title)
+	assert.NotNil(suite.T(), errGet)
+}

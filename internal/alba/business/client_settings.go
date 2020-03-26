@@ -11,7 +11,6 @@ All app-wide settings are stored in the alba.yml file.
 type ClientSettings struct {
 	LibraryPath string
 	CoversPreferredSource string
-
 	DisableLibraryConfiguration bool
 }
 

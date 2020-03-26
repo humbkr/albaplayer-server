@@ -124,7 +124,7 @@ func (interactor *LibraryInteractor) SaveAlbum(album *domain.Album) error {
 	return interactor.AlbumRepository.Save(album)
 }
 
-// Delete an album.
+// Deletes an album.
 //
 // Returns an error if no albumId provided.
 func (interactor *LibraryInteractor) DeleteAlbum(album *domain.Album) error {
@@ -281,16 +281,16 @@ func (interactor *LibraryInteractor) UpdateLibrary() {
 	interactor.mutex.Lock()
 	interactor.LibraryIsUpdating = true
 
-	interactor.CleanDeadFiles()
-	interactor.CreateCompilationArtist()
-	interactor.MediaFileRepository.ScanMediaFiles(viper.GetString("Library.Path"))
+	_ = interactor.CreateCompilationArtist()
+	_, _, _ = interactor.MediaFileRepository.ScanMediaFiles(viper.GetString("Library.Path"))
+	interactor.CleanUpLibrary()
 
 	// Log the last time a scan occurred.
 	var lastUpdated = InternalVariable{
 		Key: "library_last_updated",
 		Value: time.Now().Format("20060102150405"),
 	}
-	interactor.InternalVariableRepository.Save(&lastUpdated)
+	_ = interactor.InternalVariableRepository.Save(&lastUpdated)
 
 	interactor.LibraryIsUpdating = false
 	interactor.mutex.Unlock()
@@ -302,51 +302,30 @@ func (interactor *LibraryInteractor) EraseLibrary() {
 	interactor.LibraryIsUpdating = true
 
 	interactor.LibraryRepository.Erase()
-	interactor.MediaFileRepository.DeleteCovers()
+	_ = interactor.MediaFileRepository.DeleteCovers()
 
 	interactor.LibraryIsUpdating = false
 	interactor.mutex.Unlock()
 }
 
 // Removes all dead files from library.
-func (interactor *LibraryInteractor) CleanDeadFiles() {
-	// Keep a trace of albums and artists to check after tracks deletion.
-	relatedAlbums := make(map[int]int)
-	relatedArtists := make(map[int]int)
-
+// Also removes unused albums and artists.
+func (interactor *LibraryInteractor) CleanUpLibrary() {
 	tracks, err := interactor.GetAllTracks()
-
 	if err == nil {
 		// Delete non existant tracks.
 		for _, track := range tracks {
 			if !interactor.MediaFileRepository.MediaFileExists(track.Path) {
-				interactor.DeleteTrack(&track)
-
-				if track.AlbumId != 0 {
-					relatedAlbums[track.AlbumId]++
-				}
-				if track.ArtistId != 0 {
-					relatedArtists[track.ArtistId]++
-				}
-			}
-		}
-
-		// Delete albums if no more tracks in it.
-		for albumId := range relatedAlbums {
-			album, err := interactor.GetAlbum(albumId)
-			if err == nil && len(album.Tracks) == 0 {
-				interactor.DeleteAlbum(&album)
-			}
-		}
-
-		// Delete artists if no more albums from them.
-		for artistId := range relatedArtists {
-			artist, err := interactor.GetArtist(artistId)
-			if err == nil && len(artist.Albums) == 0 {
-				interactor.DeleteArtist(&artist)
+				_ = interactor.DeleteTrack(&track)
 			}
 		}
 	}
+
+	// Delete albums if no more tracks in them.
+	_ = interactor.AlbumRepository.CleanUp()
+
+	// Delete artists if no more tracks from them.
+	_ = interactor.ArtistRepository.CleanUp()
 }
 
 // Create a common artist for compilations.

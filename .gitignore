@@ -16,6 +16,9 @@ app.log
 /build/version.txt
 /alba-player
 
+# Config files
+/alba.yml
+
 # Dev tests
 /tmp
 

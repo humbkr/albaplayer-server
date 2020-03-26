@@ -85,7 +85,7 @@ func (ar ArtistDbRepository) Delete(entity *domain.Artist) (err error) {
 	}
 	albumRepo := AlbumDbRepository{AppContext: ar.AppContext}
 	for i := range entity.Albums {
-		albumRepo.Delete(&entity.Albums[i])
+		_ = albumRepo.Delete(&entity.Albums[i])
 	}
 
 	// Then delete album.
@@ -98,6 +98,12 @@ func (ar ArtistDbRepository) Delete(entity *domain.Artist) (err error) {
 func (ar ArtistDbRepository) Exists(id int) bool {
 	_, err := ar.Get(id)
 	return err == nil
+}
+
+// Removes artists without tracks drom DB.
+func (ar ArtistDbRepository) CleanUp() error {
+	_, err := ar.AppContext.DB.Exec("DELETE FROM artists WHERE NOT EXISTS (SELECT id FROM tracks WHERE tracks.artist_id = artists.id)")
+	return err
 }
 
 

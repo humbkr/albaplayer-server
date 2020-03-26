@@ -26,6 +26,9 @@ type ArtistRepository interface {
 
 	// Tests if an entity exists in datasource.
 	Exists(id int) bool
+
+	// Removes artists without tracks drom DB.
+	CleanUp() error
 }
 
 type AlbumRepository interface {
@@ -57,6 +60,9 @@ type AlbumRepository interface {
 
 	// Tests if an entity exists in datasource.
 	Exists(id int) bool
+
+	// Removes albums without tracks drom DB
+	CleanUp() error
 }
 
 type TrackRepository interface {

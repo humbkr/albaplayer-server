@@ -188,3 +188,21 @@ func (suite *ArtistRepoTestSuite) TestExists() {
 	exists = suite.ArtistRepository.Exists(543)
 	assert.False(suite.T(), exists)
 }
+
+func (suite *ArtistRepoTestSuite) TestCleanUp() {
+	artist := domain.Artist{
+		Name: "Artist without tracks",
+	}
+	err := suite.ArtistRepository.Save(&artist)
+	assert.Nil(suite.T(), err)
+
+	nonExistantArtist := domain.Artist{}
+	errGet := suite.ArtistRepository.AppContext.DB.SelectOne(&nonExistantArtist, "SELECT * FROM artists WHERE name = ?", artist.Name)
+	assert.Nil(suite.T(), errGet)
+
+	errCleanUp := suite.ArtistRepository.CleanUp()
+	assert.Nil(suite.T(), errCleanUp)
+
+	errGet = suite.ArtistRepository.AppContext.DB.SelectOne(&nonExistantArtist, "SELECT * FROM artists WHERE name = ?", artist.Name)
+	assert.NotNil(suite.T(), errGet)
+}
