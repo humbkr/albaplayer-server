@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -83,6 +84,7 @@ func (r LocalFilesystemRepository) ScanMediaFiles(path string) (processed int, a
 			variousArtistsId = entities[0].Id
 		}
 	}
+	fmt.Println("Various artists id: " + strconv.Itoa(variousArtistsId))
 
 
 	err = scanDirectory(path, variousArtistsId, dbTransaction)
@@ -148,13 +150,10 @@ func processMediaFiles(mediaFiles map[string][]mediaMetadata, cover string, vari
 		// Here we try to figure out if the album is a compilation or not.
 		// If at least 2 of the tracks have different artists, this must be a compilation.
 		compilation := false
-
-		if !uniqueAlbum {
-			currentArtist := album[0].Artist
-			for i := 0; i < len(album) && !compilation; i++ {
-				if i > 0 && album[i].Artist != currentArtist {
-					compilation = true
-				}
+		currentArtist := album[0].Artist
+		for i := 1; i < len(album) && !compilation; i++ {
+			if album[i].Artist != currentArtist {
+				compilation = true
 			}
 		}
 

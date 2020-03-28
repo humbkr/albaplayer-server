@@ -36,7 +36,7 @@ func createTestDatasource() (ds Datasource, err error) {
 	return InitAlbaDatasource("sqlite3", os.TempDir() + TestDatasourceFile)
 }
 
-func resetTestDataSource(ds Datasource) error {
+func clearTestDataSource(ds Datasource) error {
 	if dbmap, ok := ds.(*gorp.DbMap); ok == true {
 		dbmap.Exec("DELETE FROM covers")
 		dbmap.Exec("DELETE FROM sqlite_sequence WHERE name = 'covers'")
@@ -48,11 +48,15 @@ func resetTestDataSource(ds Datasource) error {
 		dbmap.Exec("DELETE FROM sqlite_sequence WHERE name = 'artists'")
 		dbmap.Exec("DELETE FROM variables")
 		dbmap.Exec("DELETE FROM sqlite_sequence WHERE name = 'variables'")
-
-		initTestDataSource(ds)
 	}
 
 	return nil
+}
+func resetTestDataSource(ds Datasource) error {
+	err := clearTestDataSource(ds)
+	err = initTestDataSource(ds)
+
+	return err
 }
 
 func closeTestDataSource(ds Datasource) error {
@@ -68,6 +72,8 @@ func closeTestDataSource(ds Datasource) error {
 func initTestDataSource(ds Datasource) (err error) {
 	if dbmap, ok := ds.(*gorp.DbMap); ok == true {
 		// Artists.
+		dbmap.Exec("INSERT INTO artists(id, name) VALUES(?, ?)", 1, business.LibraryDefaultCompilationArtist)
+
 		file, errOpen := os.OpenFile(TestArtistsFile, os.O_RDONLY, 0666)
 		if errOpen != nil {
 			fmt.Println(errOpen)

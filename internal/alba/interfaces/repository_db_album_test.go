@@ -42,7 +42,7 @@ func (suite *AlbumRepoTestSuite) TestGet() {
 	album, err := suite.AlbumRepository.Get(1)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), 1, album.Id)
-	assert.Equal(suite.T(), 1, album.ArtistId)
+	assert.Equal(suite.T(), 2, album.ArtistId)
 	assert.Equal(suite.T(), "Ænima", album.Title)
 	assert.Equal(suite.T(), "1996", album.Year)
 	assert.NotEmpty(suite.T(), album.Tracks)
@@ -77,42 +77,42 @@ func (suite *AlbumRepoTestSuite) TestGetAll() {
 
 func (suite *AlbumRepoTestSuite) TestGetByName() {
 	// Test album retrieval.
-	album, err := suite.AlbumRepository.GetByName("Ænima", 1)
+	album, err := suite.AlbumRepository.GetByName("Ænima", 2)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), 1, album.Id)
-	assert.Equal(suite.T(), 1, album.ArtistId)
+	assert.Equal(suite.T(), 2, album.ArtistId)
 	assert.Equal(suite.T(), "Ænima", album.Title)
 	assert.Equal(suite.T(), "1996", album.Year)
 	assert.Empty(suite.T(), album.Tracks)
 
 	// Test to get an album with non existant name.
-	_, err = suite.AlbumRepository.GetByName("Bogus", 1)
+	_, err = suite.AlbumRepository.GetByName("Bogus", 2)
 	assert.NotNil(suite.T(), err)
 
 	// Test to get an album with wrong artist id.
-	_, err = suite.AlbumRepository.GetByName("Ænima", 2)
+	_, err = suite.AlbumRepository.GetByName("Ænima", 3)
 	assert.NotNil(suite.T(), err)
 }
 
 func (suite *AlbumRepoTestSuite) TestGetAlbumsForArtist() {
 	// Test to get albums without tracks.
-	albums, err := suite.AlbumRepository.GetAlbumsForArtist(1, false)
-	assert.Nil(suite.T(), err)
-	assert.NotEmpty(suite.T(), albums)
-	for _, album := range albums {
-		assert.NotEmpty(suite.T(), album.Id)
-		assert.Equal(suite.T(), 1, album.ArtistId)
-		assert.NotEmpty(suite.T(), album.Title)
-		assert.Empty(suite.T(), album.Tracks)
-	}
-
-	// Test to get albums with tracks.
-	albums, err = suite.AlbumRepository.GetAlbumsForArtist(2, true)
+	albums, err := suite.AlbumRepository.GetAlbumsForArtist(2, false)
 	assert.Nil(suite.T(), err)
 	assert.NotEmpty(suite.T(), albums)
 	for _, album := range albums {
 		assert.NotEmpty(suite.T(), album.Id)
 		assert.Equal(suite.T(), 2, album.ArtistId)
+		assert.NotEmpty(suite.T(), album.Title)
+		assert.Empty(suite.T(), album.Tracks)
+	}
+
+	// Test to get albums with tracks.
+	albums, err = suite.AlbumRepository.GetAlbumsForArtist(3, true)
+	assert.Nil(suite.T(), err)
+	assert.NotEmpty(suite.T(), albums)
+	for _, album := range albums {
+		assert.NotEmpty(suite.T(), album.Id)
+		assert.Equal(suite.T(), 3, album.ArtistId)
 		assert.NotEmpty(suite.T(), album.Title)
 		assert.NotEmpty(suite.T(), album.Tracks)
 
@@ -149,7 +149,7 @@ func (suite *AlbumRepoTestSuite) TestSave() {
 	// Test to update the album.
 	insertedNewAlbum.Title = "Update album test"
 	insertedNewAlbum.Year = "1988"
-	insertedNewAlbum.ArtistId = 1
+	insertedNewAlbum.ArtistId = 2
 	errUpdate := suite.AlbumRepository.Save(&insertedNewAlbum)
 	assert.Nil(suite.T(), errUpdate)
 	assert.NotEmpty(suite.T(), insertedNewAlbum.Id)
@@ -157,7 +157,7 @@ func (suite *AlbumRepoTestSuite) TestSave() {
 	updatedAlbum, errGetMod := suite.AlbumRepository.Get(newAlbum.Id)
 	assert.Nil(suite.T(), errGetMod)
 	assert.Equal(suite.T(), newAlbum.Id, updatedAlbum.Id)
-	assert.Equal(suite.T(), 1, updatedAlbum.ArtistId)
+	assert.Equal(suite.T(), 2, updatedAlbum.ArtistId)
 	assert.Equal(suite.T(), "Update album test", updatedAlbum.Title)
 	assert.Equal(suite.T(), "1988", updatedAlbum.Year)
 	assert.Empty(suite.T(), updatedAlbum.Tracks)

@@ -1,11 +1,13 @@
 package interfaces
 
 import (
-	"testing"
-	"github.com/stretchr/testify/suite"
-	"github.com/stretchr/testify/assert"
 	"log"
+	"testing"
+
+	"github.com/humbkr/albaplayer-server/internal/alba/business"
 	"github.com/humbkr/albaplayer-server/internal/alba/domain"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 type ArtistRepoTestSuite struct {
@@ -41,9 +43,9 @@ func (suite *ArtistRepoTestSuite) SetupTest() {
 
 func (suite *ArtistRepoTestSuite) TestGet() {
 	// Test artist retrieval.
-	artist, err := suite.ArtistRepository.Get(1)
+	artist, err := suite.ArtistRepository.Get(2)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), 1, artist.Id)
+	assert.Equal(suite.T(), 2, artist.Id)
 	assert.Equal(suite.T(), "Tool", artist.Name)
 	assert.NotEmpty(suite.T(), artist.Albums)
 	assert.Len(suite.T(), artist.Albums, 1)
@@ -71,7 +73,10 @@ func (suite *ArtistRepoTestSuite) TestGetAll() {
 	for _, artist := range artists {
 		assert.NotEmpty(suite.T(), artist.Id)
 		assert.NotEmpty(suite.T(), artist.Name)
-		assert.NotEmpty(suite.T(), artist.Albums)
+
+		if artist.Name != business.LibraryDefaultCompilationArtist {
+			assert.NotEmpty(suite.T(), artist.Albums)
+		}
 	}
 }
 
@@ -79,7 +84,7 @@ func (suite *ArtistRepoTestSuite) TestGetByName() {
 	// Test artist retrieval.
 	artist, err := suite.ArtistRepository.GetByName("Tool")
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), 1, artist.Id)
+	assert.Equal(suite.T(), 2, artist.Id)
 	assert.Equal(suite.T(), "Tool", artist.Name)
 	assert.Empty(suite.T(), artist.Albums)
 
@@ -196,13 +201,24 @@ func (suite *ArtistRepoTestSuite) TestCleanUp() {
 	err := suite.ArtistRepository.Save(&artist)
 	assert.Nil(suite.T(), err)
 
-	nonExistantArtist := domain.Artist{}
-	errGet := suite.ArtistRepository.AppContext.DB.SelectOne(&nonExistantArtist, "SELECT * FROM artists WHERE name = ?", artist.Name)
+	artistWithoutTracks := domain.Artist{}
+	errGet := suite.ArtistRepository.AppContext.DB.SelectOne(&artistWithoutTracks, "SELECT * FROM artists WHERE name = ?", artist.Name)
 	assert.Nil(suite.T(), errGet)
+
+	variousArtists := domain.Artist{}
+	errGetVarious := suite.ArtistRepository.AppContext.DB.SelectOne(&variousArtists, "SELECT * FROM artists WHERE name = ?", business.LibraryDefaultCompilationArtist)
+	assert.Nil(suite.T(), errGetVarious)
 
 	errCleanUp := suite.ArtistRepository.CleanUp()
 	assert.Nil(suite.T(), errCleanUp)
 
-	errGet = suite.ArtistRepository.AppContext.DB.SelectOne(&nonExistantArtist, "SELECT * FROM artists WHERE name = ?", artist.Name)
-	assert.NotNil(suite.T(), errGet)
+	// Check orphan artist has been deleted.
+	nonExistantArtist := domain.Artist{}
+	errGetNonExistant := suite.ArtistRepository.AppContext.DB.SelectOne(&nonExistantArtist, "SELECT * FROM artists WHERE name = ?", artist.Name)
+	assert.NotNil(suite.T(), errGetNonExistant)
+
+	// Check Various artists has not been deleted
+	variousArtists = domain.Artist{}
+	errGetVarious = suite.ArtistRepository.AppContext.DB.SelectOne(&variousArtists, "SELECT * FROM artists WHERE name = ?", business.LibraryDefaultCompilationArtist)
+	assert.Nil(suite.T(), errGetVarious)
 }

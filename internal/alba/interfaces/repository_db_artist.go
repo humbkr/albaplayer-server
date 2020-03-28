@@ -3,6 +3,7 @@ package interfaces
 import (
 	"errors"
 
+	"github.com/humbkr/albaplayer-server/internal/alba/business"
 	"github.com/humbkr/albaplayer-server/internal/alba/domain"
 )
 
@@ -102,7 +103,7 @@ func (ar ArtistDbRepository) Exists(id int) bool {
 
 // Removes artists without tracks drom DB.
 func (ar ArtistDbRepository) CleanUp() error {
-	_, err := ar.AppContext.DB.Exec("DELETE FROM artists WHERE NOT EXISTS (SELECT id FROM tracks WHERE tracks.artist_id = artists.id)")
+	_, err := ar.AppContext.DB.Exec("DELETE FROM artists WHERE NOT EXISTS (SELECT id FROM tracks WHERE tracks.artist_id = artists.id) AND artists.name != ?", business.LibraryDefaultCompilationArtist)
 	return err
 }
 

@@ -45,7 +45,7 @@ func (suite *TrackRepoTestSuite) TestGet() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), 1, track.Id)
 	assert.Equal(suite.T(), 1, track.AlbumId)
-	assert.Equal(suite.T(), 1, track.ArtistId)
+	assert.Equal(suite.T(), 2, track.ArtistId)
 	assert.Equal(suite.T(), "Stinkfist", track.Title)
 	// We do not input anything in the db if there's only one disc, even if the tag is "1/1".
 	assert.Empty(suite.T(), track.Disc)
@@ -74,11 +74,11 @@ func (suite *TrackRepoTestSuite) TestGetAll() {
 
 func (suite *TrackRepoTestSuite) TestGetByName() {
 	// Test track retrieval.
-	track, err := suite.TrackRepository.GetByName("Forty Six & 2", 1, 1)
+	track, err := suite.TrackRepository.GetByName("Forty Six & 2", 2, 1)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), 5, track.Id)
 	assert.Equal(suite.T(), 1, track.AlbumId)
-	assert.Equal(suite.T(), 1, track.ArtistId)
+	assert.Equal(suite.T(), 2, track.ArtistId)
 	assert.Equal(suite.T(), "Forty Six & 2", track.Title)
 	// We do not input anything in the db if there's only one disc, even if the tag is "1/1".
 	assert.Empty(suite.T(), track.Disc)
@@ -88,15 +88,15 @@ func (suite *TrackRepoTestSuite) TestGetByName() {
 	assert.Equal(suite.T(), "/home/test/music/tool/aenima/05 - Forty Six & 2.mp3", track.Path)
 
 	// Test to get a track with non existant name.
-	_, err = suite.TrackRepository.GetByName("Bogus", 1, 1)
+	_, err = suite.TrackRepository.GetByName("Bogus", 2, 1)
 	assert.NotNil(suite.T(), err)
 
 	// Test to get a track with wrong artist id.
-	_, err = suite.TrackRepository.GetByName("Forty Six & 2", 2, 1)
+	_, err = suite.TrackRepository.GetByName("Forty Six & 2", 3, 1)
 	assert.NotNil(suite.T(), err)
 
 	// Test to get a track with wrong album id.
-	_, err = suite.TrackRepository.GetByName("Forty Six & 2", 1, 2)
+	_, err = suite.TrackRepository.GetByName("Forty Six & 2", 2, 2)
 	assert.NotNil(suite.T(), err)
 }
 
@@ -145,7 +145,7 @@ func (suite *TrackRepoTestSuite) TestSave() {
 	// Test to update the track with valid data.
 	insertednewTrack.Title = "Update track test"
 	insertednewTrack.AlbumId = 1
-	insertednewTrack.ArtistId = 1
+	insertednewTrack.ArtistId = 2
 	insertednewTrack.Disc = "2/2"
 	insertednewTrack.Number = 6
 	insertednewTrack.Duration = 123
@@ -159,7 +159,7 @@ func (suite *TrackRepoTestSuite) TestSave() {
 	assert.Nil(suite.T(), errGetMod)
 	assert.Equal(suite.T(), newTrack.Id, updatedTrack.Id)
 	assert.Equal(suite.T(), 1, updatedTrack.AlbumId)
-	assert.Equal(suite.T(), 1, updatedTrack.ArtistId)
+	assert.Equal(suite.T(), 2, updatedTrack.ArtistId)
 	assert.Equal(suite.T(), "Update track test", updatedTrack.Title)
 	assert.Equal(suite.T(), "2/2", updatedTrack.Disc)
 	assert.Equal(suite.T(), 6, updatedTrack.Number)

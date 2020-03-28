@@ -32,6 +32,17 @@ func (suite *LocalFSRepoTestSuite) SetupSuite() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	err = clearTestDataSource(ds)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = ds.Exec("INSERT INTO artists(id, name) VALUES(?, ?)", 1, business.LibraryDefaultCompilationArtist)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	appContext := AppContext{DB: ds}
 	suite.LocalFSRepository = LocalFilesystemRepository{AppContext: &appContext}
 }
@@ -65,6 +76,10 @@ func (suite *LocalFSRepoTestSuite) TestScanMediaFiles() {
 	assert.Equal(suite.T(), 0, added)
 
 	// Test that info has been inserted in database.
+	var defaultCompilationArtist = domain.Artist{}
+	errGetDefaultCompilationArtist := suite.LocalFSRepository.AppContext.DB.SelectOne(&defaultCompilationArtist, "SELECT * FROM artists WHERE name = ?", business.LibraryDefaultCompilationArtist)
+	assert.Nil(suite.T(), errGetDefaultCompilationArtist)
+
 	// Test track.
 	var track = domain.Track{}
 	errGet := suite.LocalFSRepository.AppContext.DB.SelectOne(&track, "SELECT * FROM tracks WHERE title = ?", "Artist #2 - Album #1 - Track #1")
@@ -92,6 +107,27 @@ func (suite *LocalFSRepoTestSuite) TestScanMediaFiles() {
 	assert.Nil(suite.T(), errGetArtist)
 	assert.Equal(suite.T(), "Artist #2", artist.Name)
 
+	// Test compilations processing.
+	var compilationTrack = domain.Track{}
+	errCompilationTrack := suite.LocalFSRepository.AppContext.DB.SelectOne(
+		&compilationTrack,
+		"SELECT * FROM tracks WHERE path = ?", "../../../testdata/mp3/compilation/Artist 1 - Compilation - Track 1.mp3")
+	assert.Nil(suite.T(), errCompilationTrack)
+
+	var compilationAlbum = domain.Album{}
+	errCompilationAlbum := suite.LocalFSRepository.AppContext.DB.SelectOne(
+		&compilationAlbum,
+		"SELECT * FROM albums WHERE id = ?", compilationTrack.AlbumId)
+	assert.Nil(suite.T(), errCompilationAlbum)
+
+	var compilationAlbumArtist = domain.Artist{}
+	errCompilationAlbumArtist := suite.LocalFSRepository.AppContext.DB.SelectOne(
+		&compilationAlbumArtist,
+		"SELECT * FROM artists WHERE id = ?", compilationAlbum.ArtistId)
+	assert.Nil(suite.T(), errCompilationAlbumArtist)
+	assert.Equal(suite.T(), business.LibraryDefaultCompilationArtist, compilationAlbumArtist.Name)
+
+
 	// TODO test more, this is not exhaustive.
 }
 
@@ -118,6 +154,7 @@ func (suite *LocalFSRepoTestSuite) TestProcessArtist() {}
 func (suite *LocalFSRepoTestSuite) TestProcessAlbum() {}
 func (suite *LocalFSRepoTestSuite) TestProcessTrack() {}
 func (suite *LocalFSRepoTestSuite) TestProcessCover() {}
+func (suite *LocalFSRepoTestSuite) TestWriteCoverFileInternal() {}
 
 func (suite *LocalFSRepoTestSuite) TestGetMetadataFromFile() {
 	// Test with almost full metadata.
@@ -193,8 +230,4 @@ func (suite *LocalFSRepoTestSuite) TestGetMetadataFromFile() {
 	assert.NotNil(suite.T(), err)
 
 	return
-}
-
-func (suite *LocalFSRepoTestSuite) TestWriteCoverFileInternal() {
-	//tmpCoversDirectory := viper.GetString("Covers.Directory")
 }
