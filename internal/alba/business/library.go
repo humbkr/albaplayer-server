@@ -1,12 +1,12 @@
 package business
 
 import (
-	"github.com/humbkr/albaplayer-server/internal/alba/domain"
-	"github.com/spf13/viper"
 	"errors"
-	"fmt"
 	"sync"
 	"time"
+
+	"github.com/humbkr/albaplayer-server/internal/alba/domain"
+	"github.com/spf13/viper"
 )
 
 const CoverPreferredSourceFolder = "folder"
@@ -331,14 +331,11 @@ func (interactor *LibraryInteractor) CleanUpLibrary() {
 
 // Create a common artist for compilations.
 func (interactor *LibraryInteractor) CreateCompilationArtist() error {
-	fmt.Println("CreateCompilationArtist")
 	_, err := interactor.GetArtistByName(LibraryDefaultCompilationArtist)
 	if err != nil {
-		fmt.Println("comp artist does not exist, create it")
 		compilationArtist := domain.Artist{Name: LibraryDefaultCompilationArtist}
 		return interactor.SaveArtist(&compilationArtist)
 	}
 
-	fmt.Println("comp artist exists")
 	return err
 }

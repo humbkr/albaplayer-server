@@ -5,20 +5,19 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
 	"strconv"
+	"strings"
 
+	"github.com/dhowden/tag"
+	"github.com/go-gorp/gorp"
 	"github.com/humbkr/albaplayer-server/internal/alba/business"
 	"github.com/humbkr/albaplayer-server/internal/alba/domain"
-	"github.com/dhowden/tag"
-	"strings"
-	"log"
-	"github.com/go-gorp/gorp"
 	"github.com/spf13/viper"
 )
 
@@ -84,9 +83,7 @@ func (r LocalFilesystemRepository) ScanMediaFiles(path string) (processed int, a
 			variousArtistsId = entities[0].Id
 		}
 	}
-	fmt.Println("Various artists id: " + strconv.Itoa(variousArtistsId))
-
-
+	
 	err = scanDirectory(path, variousArtistsId, dbTransaction)
 	dbTransaction.Commit()
 
