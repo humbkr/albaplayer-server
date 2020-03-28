@@ -83,7 +83,7 @@ func (r LocalFilesystemRepository) ScanMediaFiles(path string) (processed int, a
 			variousArtistsId = entities[0].Id
 		}
 	}
-	
+
 	err = scanDirectory(path, variousArtistsId, dbTransaction)
 	dbTransaction.Commit()
 

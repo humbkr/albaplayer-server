@@ -495,7 +495,13 @@ func NewGraphQLInteractor(ci *business.LibraryInteractor) *graphQLInteractor {
 				},
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					key := p.Args["key"].(string)
-					return interactor.Library.InternalVariableRepository.Get(key)
+					// Return nil if no variable found instead of an error.
+					variable, err := interactor.Library.InternalVariableRepository.Get(key)
+					if err == nil {
+						return variable, err
+					}
+
+					return nil, nil
 				},
 			},
 
