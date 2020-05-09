@@ -429,8 +429,9 @@ func getMetadataFromFile(filePath string) (info mediaMetadata, err error) {
 		info.Title = filename[0 : len(filename) - len(extension)]
 	}
 
-	// Set the filepath.
-	info.Path = filePath
+	// Set the filepath info from the root of the library.
+	libraryRoot := viper.GetString("Library.Path")
+	info.Path = strings.TrimPrefix(filePath, libraryRoot)
 
 	return
 }

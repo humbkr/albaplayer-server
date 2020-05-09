@@ -33,7 +33,8 @@ func (h mediaStreamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.ServeFile(w, r, track.Path)
+	libraryRoot := viper.GetString("Library.Path")
+	http.ServeFile(w, r, libraryRoot + track.Path)
 	return
 }
 

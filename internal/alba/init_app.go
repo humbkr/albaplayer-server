@@ -3,6 +3,7 @@ package alba
 import (
 	"fmt"
 	"log"
+	"path/filepath"
 
 	"github.com/humbkr/albaplayer-server/internal/alba/business"
 	"github.com/humbkr/albaplayer-server/internal/alba/interfaces"
@@ -39,6 +40,11 @@ func InitApp() business.LibraryInteractor {
 	err := viper.ReadInConfig()
 	if err != nil {
 		panic(fmt.Errorf("Fatal error loading config file: %s \n", err))
+	}
+
+	// Check provided values are valid.
+	if !filepath.IsAbs(viper.GetString("Library.Path")) {
+		panic(fmt.Errorf("Invalid library root provided: path must be absolute. \n"))
 	}
 
 	// Initialize logging system.
