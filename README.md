@@ -20,7 +20,7 @@ WEBSITE (with demo): [https://albaplayer.com](https://albaplayer.com)
 - Library browser with Artists / Albums / Tracks views that actually manage compilations properly
 - Now playing screen with current song info and buttons to google lyrics and guitar tabs
 - Client / server app, so can be installed on a server to access a music library remotely
-- Can manage huge libraries (tested with 20000+ songs)
+- Can manage huge libraries (tested with 30000+ songs)
 
 **Note:** this player is not adapted for mobile or tablet use. A good mobile UI would be completely different from the
 desktop one, so I focused on the desktop first, as there are already a lot of good mobile players app.
