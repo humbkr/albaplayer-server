@@ -2,12 +2,15 @@ package interfaces
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 
 	"github.com/go-gorp/gorp"
 	"github.com/humbkr/albaplayer-server/internal/alba/business"
 	"github.com/humbkr/albaplayer-server/internal/alba/domain"
+	"github.com/markbates/pkger"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/rubenv/sql-migrate"
 )
 
 /**
@@ -36,6 +39,16 @@ func InitAlbaDatasource(dbDriver string, dbFile string) (ds Datasource, err erro
 	if err = connection.Ping(); err != nil {
 		return
 	}
+
+	migrations := &migrate.HttpFileSystemMigrationSource{
+		FileSystem: pkger.Dir("/migrations"),
+	}
+
+	n, err := migrate.Exec(connection, "sqlite3", migrations, migrate.Up)
+	if err != nil {
+		return
+	}
+	fmt.Printf("Applied %d migrations!\n", n)
 
 	// Construct a gorp DbMap.
 	dbmap := &gorp.DbMap{Db: connection, Dialect: gorp.SqliteDialect{}}

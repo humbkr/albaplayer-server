@@ -3,3 +3,6 @@
 /test
 /tmp
 /app.log
+/pkged.go
+/build
+!/build/prod.alba.yml

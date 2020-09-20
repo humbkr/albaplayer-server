@@ -15,6 +15,7 @@ app.log
 /build/albaplayer-*
 /build/version.txt
 /alba-player
+pkged.go
 
 # Config files
 /alba.yml

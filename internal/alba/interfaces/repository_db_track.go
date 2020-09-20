@@ -2,6 +2,7 @@ package interfaces
 
 import (
 	"errors"
+	"time"
 
 	"github.com/humbkr/albaplayer-server/internal/alba/domain"
 )
@@ -72,6 +73,7 @@ func (tr TrackDbRepository) Save(entity *domain.Track) (err error) {
 		return
 	} else {
 		// Insert new entity.
+		entity.DateAdded = time.Now().Unix()
 		err = tr.AppContext.DB.Insert(entity)
 		return
 	}

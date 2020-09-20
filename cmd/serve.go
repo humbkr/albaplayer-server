@@ -2,15 +2,21 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"log"
+	"mime"
+	"net/http"
+	"os"
+	"path/filepath"
 
+	gqlHandler "github.com/graphql-go/handler"
 	"github.com/humbkr/albaplayer-server/internal/alba"
 	"github.com/humbkr/albaplayer-server/internal/alba/interfaces"
+	"github.com/markbates/pkger"
 	"github.com/mnmtanish/go-graphiql"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	gqlHandler "github.com/graphql-go/handler"
-	"net/http"
 )
 
 func init() {
@@ -34,40 +40,62 @@ var serveCmd = &cobra.Command{
 			Pretty: true,
 		})
 
+		mux := http.NewServeMux()
+
 		// Serve a GraphQL endpoint at `/graphql`.
 		// Make the server handle cross-domain requests.
-		http.Handle("/graphql", cors.Default().Handler(graphQLHandler))
+		mux.Handle("/graphql", graphQLHandler)
 
 		// Serve media files streaming endpoint.
 		// Makes the server handle cross-domain requests.
 		mediaFilesHandler := interfaces.NewMediaStreamHandler(&libraryInteractor)
-		http.Handle("/stream/", http.StripPrefix("/stream/", cors.Default().Handler(mediaFilesHandler)))
+		mux.Handle("/stream/", http.StripPrefix("/stream/", mediaFilesHandler))
 
 		// Serve media files streaming endpoint.
 		// Makes the server handle cross-domain requests.
 		coverFilesHandler := interfaces.NewCoverStreamHandler(&libraryInteractor)
-		http.Handle("/covers/", http.StripPrefix("/covers/", cors.Default().Handler(coverFilesHandler)))
+		mux.Handle("/covers/", http.StripPrefix("/covers/", coverFilesHandler))
 
-		// Serve frontend app.
-		http.Handle("/static/", http.StripPrefix("/static/", cors.Default().Handler(http.FileServer(http.Dir("web/static")))))
-		http.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
-			http.ServeFile(w, r, "web/favicon.ico")
-		})
-		http.HandleFunc("/robots.txt", func(w http.ResponseWriter, r *http.Request) {
-			http.ServeFile(w, r, "web/robots.txt")
-		})
-		http.HandleFunc("/manifest.json", func(w http.ResponseWriter, r *http.Request) {
-			http.ServeFile(w, r, "web/manifest.json")
-		})
-		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			http.ServeFile(w, r, "web/index.html")
-		})
+		// Serve SPA.
+		fileServer := http.FileServer(pkger.Dir("/web"))
+		mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			// Will serve requested file if present in the directory, or redirect
+			// to the SPA index file if not.
+			path, err := filepath.Abs(r.URL.Path)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 
+			path = filepath.Join("/web", path)
+
+			_, err = pkger.Stat(path)
+			if os.IsNotExist(err) {
+				// File does not exist, let the SPA handle the routing.
+				w.Header().Add("Content-Type", mime.TypeByExtension(".html"))
+				file, err := pkger.Open("/web/index.html")
+				defer file.Close()
+
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusNotFound)
+					return
+				}
+				_, _ = io.Copy(w, file)
+				return
+			} else if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			fileServer.ServeHTTP(w, r)
+		})
 
 		if viper.GetBool("DevMode.Enabled") {
 			// Serve graphiql.
-			http.HandleFunc("/graphiql", graphiql.ServeGraphiQL)
+			mux.HandleFunc("/graphiql", graphiql.ServeGraphiQL)
 		}
+
+		rootHandler := cors.Default().Handler(mux)
 
 		// Launch the server.
 		if viper.GetBool("Server.Https.Enabled") {
@@ -76,14 +104,16 @@ var serveCmd = &cobra.Command{
 				":" + viper.GetString("Server.Port"),
 				viper.GetString("Server.Https.CertFile"),
 				viper.GetString("Server.Https.KeyFile"),
-				nil)
+				rootHandler)
 
 			if errServ != nil {
 				fmt.Printf("ERROR: %s\n", errServ.Error())
 			}
 		} else {
 			fmt.Printf("Server is up on port %s (http)\n", viper.GetString("Server.Port"))
-			http.ListenAndServe(":" + viper.GetString("Server.Port"), nil)
+			if err := http.ListenAndServe(":" + viper.GetString("Server.Port"), rootHandler); err != nil {
+				log.Fatal(err)
+			}
 		}
 	},
 }

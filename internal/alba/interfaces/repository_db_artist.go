@@ -2,6 +2,7 @@ package interfaces
 
 import (
 	"errors"
+	"time"
 
 	"github.com/humbkr/albaplayer-server/internal/alba/business"
 	"github.com/humbkr/albaplayer-server/internal/alba/domain"
@@ -71,6 +72,7 @@ func (ar ArtistDbRepository) Save(entity *domain.Artist) (err error) {
 		return
 	} else {
 		// Insert new entity.
+		entity.DateAdded = time.Now().Unix()
 		err = ar.AppContext.DB.Insert(entity)
 		return
 	}

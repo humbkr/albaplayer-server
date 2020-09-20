@@ -5,9 +5,10 @@ Defines and initialize the GraphQL schema.
 package interfaces
 
 import (
-	"github.com/graphql-go/graphql"
 	"errors"
 	"strconv"
+
+	"github.com/graphql-go/graphql"
 
 	"github.com/humbkr/albaplayer-server/internal/alba/business"
 	"github.com/humbkr/albaplayer-server/internal/alba/domain"
@@ -51,6 +52,17 @@ var artistType = graphql.NewObject(graphql.ObjectConfig{
 			Resolve: func (p graphql.ResolveParams) (interface{}, error) {
 				if artist, ok := p.Source.(domain.Artist); ok == true {
 					return artist.Albums, nil
+				}
+				return nil, nil
+			},
+		},
+		"dateAdded": &graphql.Field{
+			Name: "Date added",
+			Description: "Date at which the artist has been added to the library.",
+			Type: graphql.Int,
+			Resolve: func (p graphql.ResolveParams) (interface{}, error) {
+				if artist, ok := p.Source.(domain.Artist); ok == true {
+					return artist.DateAdded, nil
 				}
 				return nil, nil
 			},
@@ -129,6 +141,17 @@ var albumType = graphql.NewObject(graphql.ObjectConfig{
 					return album.Tracks, nil
 				}
 
+				return nil, nil
+			},
+		},
+		"dateAdded": &graphql.Field{
+			Name: "Date added",
+			Description: "Date at which the album has been added to the library.",
+			Type: graphql.Int,
+			Resolve: func (p graphql.ResolveParams) (interface{}, error) {
+				if album, ok := p.Source.(domain.Album); ok == true {
+					return album.DateAdded, nil
+				}
 				return nil, nil
 			},
 		},
@@ -245,6 +268,17 @@ var trackType = graphql.NewObject(graphql.ObjectConfig{
 			Resolve: func (p graphql.ResolveParams) (interface{}, error) {
 				if track, ok := p.Source.(domain.Track); ok == true {
 					return track.AlbumId, nil
+				}
+				return nil, nil
+			},
+		},
+		"dateAdded": &graphql.Field{
+			Name: "Date added",
+			Description: "Date at which the track has been added to the library.",
+			Type: graphql.Int,
+			Resolve: func (p graphql.ResolveParams) (interface{}, error) {
+				if track, ok := p.Source.(domain.Track); ok == true {
+					return track.DateAdded, nil
 				}
 				return nil, nil
 			},

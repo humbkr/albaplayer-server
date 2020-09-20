@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/dhowden/tag"
 	"github.com/go-gorp/gorp"
@@ -260,6 +261,7 @@ func processArtist(dbTransaction *gorp.Transaction, metadata *mediaMetadata) (id
 			_, err = dbTransaction.Update(&artist)
 		} else {
 			// Insert new entity.
+			artist.DateAdded = time.Now().Unix()
 			err = dbTransaction.Insert(&artist)
 
 		}
@@ -300,6 +302,7 @@ func processAlbum(dbTransaction *gorp.Transaction, metadata *mediaMetadata, arti
 			_, err = dbTransaction.Update(&album)
 		} else {
 			// Insert new entity.
+			album.DateAdded = time.Now().Unix()
 			err = dbTransaction.Insert(&album)
 		}
 
@@ -342,6 +345,7 @@ func processTrack(dbTransaction *gorp.Transaction, metadata *mediaMetadata, arti
 		_, err = dbTransaction.Update(&track)
 	} else {
 		// Insert new entity.
+		track.DateAdded = time.Now().Unix()
 		err = dbTransaction.Insert(&track)
 	}
 

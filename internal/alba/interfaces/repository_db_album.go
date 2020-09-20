@@ -2,6 +2,7 @@ package interfaces
 
 import (
 	"errors"
+	"time"
 
 	"github.com/humbkr/albaplayer-server/internal/alba/domain"
 )
@@ -33,7 +34,7 @@ Fetches all albums from the database.
 */
 func (ar AlbumDbRepository) GetAll(hydrate bool) (entities domain.Albums, err error) {
 	if !hydrate {
-		query := "SELECT id, title, year, artist_id, cover_id FROM albums"
+		query := "SELECT id, title, year, artist_id, cover_id, created_at FROM albums"
 		_, err = ar.AppContext.DB.Select(&entities, query)
 
 	} else {
@@ -42,6 +43,7 @@ func (ar AlbumDbRepository) GetAll(hydrate bool) (entities domain.Albums, err er
 			AlbumTitle string
 			AlbumYear string
 			AlbumArtistId int
+			AlbumCreatedAt int64
 			domain.Track
 			// Cannot select domain.album.ArtistId or domain.track.AlbumId because of a Gorp error...
 			// So we have to join on trk.album_id, but then Gorp cannot do the mapping with gorpResult, so we have
@@ -50,7 +52,7 @@ func (ar AlbumDbRepository) GetAll(hydrate bool) (entities domain.Albums, err er
 		}
 		var results []gorpResult
 
-		query := "SELECT alb.Id AlbumId, alb.Title AlbumTitle, alb.Year AlbumYear, alb.artist_id AlbumArtistId, trk.* " +
+		query := "SELECT alb.Id AlbumId, alb.Title AlbumTitle, alb.Year AlbumYear, alb.artist_id AlbumArtistId, alb.created_at AlbumCreatedAt, trk.* " +
 			     "FROM albums alb, tracks trk WHERE alb.id = trk.album_id"
 
 		_, err = ar.AppContext.DB.Select(&results, query)
@@ -69,6 +71,7 @@ func (ar AlbumDbRepository) GetAll(hydrate bool) (entities domain.Albums, err er
 					Duration: r.Duration,
 					Genre: r.Genre,
 					Path: r.Path,
+					DateAdded: r.DateAdded,
 				}
 
 				if current.Id == 0 {
@@ -77,6 +80,7 @@ func (ar AlbumDbRepository) GetAll(hydrate bool) (entities domain.Albums, err er
 						Title: r.AlbumTitle,
 						Year: r.AlbumYear,
 						ArtistId: r.AlbumArtistId,
+						DateAdded: r.AlbumCreatedAt,
 					}
 				} else if r.Id != current.Id {
 					entities = append(entities, current)
@@ -86,6 +90,7 @@ func (ar AlbumDbRepository) GetAll(hydrate bool) (entities domain.Albums, err er
 						Title: r.AlbumTitle,
 						Year: r.AlbumYear,
 						ArtistId: r.AlbumArtistId,
+						DateAdded: r.AlbumCreatedAt,
 					}
 				}
 				current.Tracks = append(current.Tracks, track)
@@ -138,6 +143,7 @@ func (ar AlbumDbRepository) Save(entity *domain.Album) (err error) {
 		return
 	} else {
 		// Insert new entity.
+		entity.DateAdded = time.Now().Unix()
 		err = ar.AppContext.DB.Insert(entity)
 		return
 	}
