@@ -6,7 +6,6 @@ import (
 	"log"
 	"mime"
 	"net/http"
-	"os"
 	"path/filepath"
 
 	gqlHandler "github.com/graphql-go/handler"
@@ -70,7 +69,7 @@ var serveCmd = &cobra.Command{
 			path = filepath.Join("/web", path)
 
 			_, err = pkger.Stat(path)
-			if os.IsNotExist(err) {
+			if err != nil {
 				// File does not exist, let the SPA handle the routing.
 				w.Header().Add("Content-Type", mime.TypeByExtension(".html"))
 				file, err := pkger.Open("/web/index.html")
@@ -81,9 +80,6 @@ var serveCmd = &cobra.Command{
 					return
 				}
 				_, _ = io.Copy(w, file)
-				return
-			} else if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 

@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/graphql-go/graphql"
+	"github.com/humbkr/albaplayer-server/internal/alba/version"
 
 	"github.com/humbkr/albaplayer-server/internal/alba/business"
 	"github.com/humbkr/albaplayer-server/internal/alba/domain"
@@ -378,6 +379,14 @@ var settingsType = graphql.NewObject(graphql.ObjectConfig{
 					return settings.DisableLibraryConfiguration, nil
 				}
 				return nil, nil
+			},
+		},
+		"version": &graphql.Field{
+			Name:        "Server version",
+			Description: "Server version.",
+			Type:        graphql.String,
+			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+				return version.Version, nil
 			},
 		},
 	},
