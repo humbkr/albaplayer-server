@@ -1,6 +1,8 @@
 # Alba Player (server)
 > Minimalistic audio library web player.
 
+# New monorepo for this project: [https://github.com/humbkr/albaplayer](https://github.com/humbkr/albaplayer)
+
 ## About
 Alba player is an audio library web-based player optimized for desktop. I was tired of all the desktop audio players available on linux 
 and macos with questionable user interfaces and/or library management, and I wanted to learn golang and react, so I decided
